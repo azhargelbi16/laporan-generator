@@ -337,12 +337,28 @@ function Build-AiPrompt {
     return $sb.ToString()
 }
 
+function Test-AiNetwork {
+    param([string]$Exe)
+    try {
+        $p = [System.Diagnostics.Process]::Start((New-Object System.Diagnostics.ProcessStartInfo -Property @{
+            FileName = $Exe; Arguments = '--help'; UseShellExecute = $false;
+            RedirectStandardOutput = $true; RedirectStandardError = $true;
+            CreateNoWindow = $true
+        }))
+        if (-not $p.WaitForExit(10000)) { try { $p.Kill() } catch {}; return $false }
+        return $true
+    } catch { return $false }
+}
+
 function Invoke-Ai {
-    param($Cfg, [string]$Prompt)
+    param($Cfg, [string]$Prompt, [int]$RetryCount = 2)
     $exe = @($Cfg.command)[0]
     $resolved = Get-Command $exe -ErrorAction SilentlyContinue
     if (-not $resolved) {
-        return @{ Ok = $false; Error = "perintah AI '$exe' tidak ditemukan di PATH (ubah ai-config.json)" }
+        return @{ Ok = $false; Error = "perintah AI '$exe' tidak ditemukan di PATH. Pastikan Hermes terpasang dan ada di PATH, atau ubah ai-config.json (contoh command: ollama run qwen3)." }
+    }
+    if (-not (Test-AiNetwork -Exe $resolved.Source)) {
+        return @{ Ok = $false; Error = "Tidak dapat menjalankan perintah AI '$exe'. Kemungkinan proses terblokir antivirus/firewall, atau membutuhkan koneksi ke router/proxy (pastikan jaringan/router aktif)." }
     }
     $argItems = @()
     if (@($Cfg.command).Count -gt 1) { $argItems += @($Cfg.command)[1..(@($Cfg.command).Count - 1)] }
@@ -389,26 +405,47 @@ function Invoke-Ai {
         $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
     } catch {}
 
-    $p = [System.Diagnostics.Process]::Start($psi)
-    $outTask = $p.StandardOutput.ReadToEndAsync()
-    $errTask = $p.StandardError.ReadToEndAsync()
-    if (-not $p.WaitForExit([int]($Cfg.timeout_seconds) * 1000)) {
-        try { $p.Kill() } catch {}
-        return @{ Ok = $false; Error = "timeout setelah $($Cfg.timeout_seconds) detik" }
+    $attempt = 0
+    while ($attempt -lt $RetryCount) {
+        $attempt++
+        $p = [System.Diagnostics.Process]::Start($psi)
+        $outTask = $p.StandardOutput.ReadToEndAsync()
+        $errTask = $p.StandardError.ReadToEndAsync()
+        $timeoutMs = [int]($Cfg.timeout_seconds) * 1000
+        if (-not $p.WaitForExit($timeoutMs)) {
+            try { $p.Kill() } catch {}
+            $err = "timeout setelah $($Cfg.timeout_seconds) detik"
+            if ($attempt -lt $RetryCount) {
+                Write-Wrn "AI percobaan $attempt gagal ($err), mencoba lagi..."
+                continue
+            }
+            return @{ Ok = $false; Error = $err + " (percobaan $attempt x gagal)" }
+        }
+        $stdout = $outTask.Result
+        $stderr = $errTask.Result
+        if ($p.ExitCode -ne 0) {
+            $msg = ($stderr -replace "\s+", " ").Trim()
+            if ($msg.Length -gt 500) { $msg = $msg.Substring(0, 500) + "..." }
+            $err = "exit code $($p.ExitCode): $msg"
+            if ($attempt -lt $RetryCount) {
+                Write-Wrn "AI percobaan $attempt gagal ($err), mencoba lagi..."
+                continue
+            }
+            return @{ Ok = $false; Error = $err + " (percobaan $attempt x gagal)" }
+        }
+        if ([string]::IsNullOrWhiteSpace($stdout)) {
+            $msg = ($stderr -replace "\s+", " ").Trim()
+            if ($msg.Length -gt 500) { $msg = $msg.Substring(0, 500) + "..." }
+            $err = "output kosong. stderr: $msg"
+            if ($attempt -lt $RetryCount) {
+                Write-Wrn "AI percobaan $attempt gagal ($err), mencoba lagi..."
+                continue
+            }
+            return @{ Ok = $false; Error = $err + " (percobaan $attempt x gagal)" }
+        }
+        return @{ Ok = $true; Text = $stdout }
     }
-    $stdout = $outTask.Result
-    $stderr = $errTask.Result
-    if ($p.ExitCode -ne 0) {
-        $msg = ($stderr -replace "\s+", " ").Trim()
-        if ($msg.Length -gt 300) { $msg = $msg.Substring(0, 300) }
-        return @{ Ok = $false; Error = "exit code $($p.ExitCode): $msg" }
-    }
-    if ([string]::IsNullOrWhiteSpace($stdout)) {
-        $msg = ($stderr -replace "\s+", " ").Trim()
-        if ($msg.Length -gt 300) { $msg = $msg.Substring(0, 300) }
-        return @{ Ok = $false; Error = "output kosong. stderr: $msg" }
-    }
-    return @{ Ok = $true; Text = $stdout }
+    return @{ Ok = $false; Error = "Gagal setelah $RetryCount percobaan" }
 }
 
 function ConvertTo-ChapterMarkdown {
@@ -698,7 +735,14 @@ function Cmd-Build {
                 $written = $true
                 Write-Ok "$fname ditulis AI"
             } else {
-                Write-Wrn "AI gagal untuk $fname : $($r.Error) -> pakai kerangka"
+                Write-Wrn "AI gagal untuk $fname : $($r.Error)"
+                if (Test-Path -LiteralPath $fpath) {
+                    $existing = Get-Content -LiteralPath $fpath -Raw -Encoding UTF8
+                    if ($existing -notmatch '\[perlu diisi\]' -and $existing.Trim().Length -gt 50) {
+                        Write-Host "  mempertahankan isi lama $fname (AI gagal, file tidak ditimpa)" -ForegroundColor Yellow
+                        $written = $true
+                    }
+                }
             }
         }
         if (-not $written) {
@@ -904,3 +948,4 @@ switch ($Command.ToLower()) {
     "help"  { Show-Help }
     default { Show-Help; Write-Err "perintah tidak dikenal: $Command" }
 }
+

@@ -26,3 +26,6 @@ __pycache__/
 history-*.md
 *.tmp
 dist/
+
+metadata.yml.bak-*
+chapters.bak/
