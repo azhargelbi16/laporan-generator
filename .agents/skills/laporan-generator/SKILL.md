@@ -11,6 +11,19 @@ description: >-
 
 # Laporan Generator: Engine Dokumen Akademik FAPERTA UNEJ (S1)
 
+> [!IMPORTANT]
+> **SEJAK v3 (rombakan 2026-10-17): alur utama repo ini berubah.**
+> Pipeline sekarang DOCX-only via `.\laporan.ps1` (PowerShell):
+> `templates/<nama>` (reference.docx + struktur.md) + `sources/`
+> (PDF sumber + references.bib) -> ekstraksi pdftotext -> perangkuman AI
+> (terkonfigurasi di `ai-config.json`, default `hermes chat --query-file
+> {prompt_file} -Q`) -> `chapters/bab*.md` -> Pandoc -> `Laporan.docx`.
+> Contoh: `.\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2`
+> (lihat README.md root). Jalur PDF/Typst, `npx laporan-generator`, MCP
+> server, dan sebagian besar panduan di bawah ini adalah alur v2.8.0 yang
+> kini ada di `_legacy/` dan tidak dipelihara lagi; folder `resources/`
+> skill ini pun masih snapshot v2.8.0.
+
 Skill ini membantu agen AI menyusun, menulis, mengaudit, dan mengompilasi
 karya tulis ilmiah tingkat S1 di lingkungan **Fakultas Pertanian Universitas
 Jember** mengikuti Buku Pedoman Penulisan Karya Tulis Ilmiah (PPKI) FAPERTA UNEJ

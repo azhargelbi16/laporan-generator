@@ -1,0 +1,7 @@
+---
+# Metadata bawaan template laporan praktikum.
+# Nilai di sini DIOBATI oleh metadata.yml di root repo (data pribadi Anda),
+# karena metadata.yml root dibaca SETELAH file ini oleh pandoc.
+jenis_karya: "LAPORAN PRAKTIKUM"
+mode: "laporan"
+title: "LAPORAN PRAKTIKUM [perlu diisi]"

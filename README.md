@@ -1,180 +1,95 @@
-<p align="center">
-  <img src="logo.jpg" alt="Laporan Generator" width="180"/>
-</p>
+# laporan-generator (v3, alur DOCX-only)
 
-<h1 align="center">Laporan Generator — FAPERTA Universitas Jember</h1>
+Pipeline lokal untuk membuat laporan akademik dalam format **DOCX saja**,
+dijalankan dari **Windows PowerShell**. Dua database menjadi input:
 
-<p align="center">
-  <b>Generator Karya Tulis Ilmiah S1 FAPERTA UNEJ dari Markdown ke PDF & Word</b><br/>
-  Menyusun <b>skripsi, laporan praktikum/responsi, laporan PKL/magang, proposal usaha,
-  dan makalah kuliah</b> mengikuti Buku Pedoman Penulisan Karya Tulis Ilmiah (PPKI)
-  Fakultas Pertanian Universitas Jember — dalam hitungan detik.
-</p>
+- `templates/`  : database template laporan (`praktikum`, `tugas-dosen`; tiap
+  template = `reference.docx` + `struktur.md` + `metadata.yml`)
+- `sources/`    : database sumber (`pdf/*.pdf` + `references.bib` sebagai
+  satu-satunya sumber sitasi sah)
 
-<p align="center">
-  <a href="GETTING-STARTED.md">Panduan Cepat</a> &bull;
-  <a href="docs/campus-guide.md">Panduan Format FAPERTA</a> &bull;
-  <a href="docs/syntax-cheatsheet.md">Cheatsheet Sintaks</a> &bull;
-  <a href="docs/metadata-schema.md">Skema Metadata</a> &bull;
-  <a href="docs/troubleshooting.md">Penyelesaian Masalah</a>
-</p>
+Alur: pilih template & sumber -> ekstraksi teks PDF (pdftotext) -> potong
+teks per-bagian (chunking) -> dirangkum AI menjadi `chapters/bab*.md`
+sesuai struktur template -> validasi sitasi terhadap `references.bib` ->
+Pandoc (`--reference-doc` + `docx.lua` + citeproc APA) -> **Laporan.docx**.
 
----
+Jalur PDF/Typst, CLI npm, Docker, dan docs lama ada di `_legacy/`.
+Format FAPERTA UNEJ (margin, Times New Roman, heading bab bernomor,
+sitasi APA 6th) tetap berlaku lewat `reference.docx`, `docx.lua`,
+`presets/unej-faperta.yml`, dan `apa.csl`.
 
-## Ikhtisar
+## Pemakaian
 
-Laporan Generator adalah kompilator otomatisasi dokumen akademik berevolusi ganda
-(*dual-engine*) dari berkas sumber Markdown modular menjadi:
-
-1. **PDF**: kompilasi tipografi presisi berbasis Typst.
-2. **Microsoft Word (.docx)**: dokumen OpenXML dengan hierarki heading rapi,
-   Daftar Isi dinamis, dan penomoran halaman ganda (Romawi kecil bagian awal,
-   Arab bagian utama).
-
-Proyek ini dikonfigurasi khusus untuk **jenjang S1 FAPERTA Universitas Jember**
-dengan satu preset: **`unej-faperta`**.
-
----
-
-## Format FAPERTA UNEJ (Ringkas)
-
-| Aspek | Ketentuan |
-|---|---|
-| Kertas | A4, 80 gram |
-| Margin | Atas **4 cm**, Bawah **3 cm**, Kiri **4 cm**, Kanan **3 cm** |
-| Font | **Times New Roman 12 pt** (judul sampul 14 pt) |
-| Indentasi | **1 cm** |
-| Spasi baris | **1,5** (daftar pustaka 1 spasi) |
-| Judul bab | **`BAB 1. PENDAHULUAN`** (Arab + titik, default; opsi Romawi `BAB I`) |
-| Subbab | **`1.1. Judul Subbab`** (tebal) |
-| Subsubbab | **`1.1.1 Judul Subsubbab`** (tidak tebal) |
-| Nomor halaman | Romawi kecil tengah-bawah (awal); Arab kanan-atas (utama) |
-| Ilustrasi | `Tabel 1.1.` (atas) dan `Gambar 1.1.` (bawah) |
-| Sitasi | **APA 6th edition** |
-
----
-
-## Struktur Dokumen (Mode)
-
-Field `mode` pada `metadata.yml` menentukan struktur halaman depan:
-
-- **`mode: skripsi`** → Sampul → Lembar Pengesahan → Ringkasan → Summary →
-  Prakata → Daftar Isi/Tabel/Gambar → Batang Tubuh → Daftar Pustaka → Lampiran.
-- **`mode: laporan`** → Sampul → Prakata/Kata Pengantar → Daftar Isi
-  (+ Daftar Gambar/Tabel bila ada) → Batang Tubuh → Daftar Pustaka → Lampiran.
-
----
-
-## Alur Penggunaan Cepat
-
-### Prasyarat
-Pasang dependensi sistem (Typst, Pandoc, ImageMagick, Python):
 ```powershell
-.\laporan.ps1 setup      # Windows
-```
-```bash
-./laporan setup          # Linux / macOS
-```
-
-### 1. Inisialisasi dokumentasi proyek (konten contoh)
-```powershell
-.\laporan.ps1 init
+.\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2   # penuh dengan AI
+.\laporan.ps1 build -Template tugas-dosen -Sources contoh-jurnal # penuh dengan AI
+.\laporan.ps1 build -Template praktikum -NoAi                    # kerangka [perlu diisi] tanpa AI
+.\laporan.ps1 build -Template praktikum -Sources contoh-jurnal -Bab 1  # tulis ulang bab 1 saja
+.\laporan.ps1 check    # cek dependensi, template, sumber, validasi sitasi
+.\laporan.ps1 list     # daftar template & sumber
+.\laporan.ps1 clean    # hapus Laporan.docx, chapters/bab*.md, cache
 ```
 
-### 2. Sunting berkas
-- `metadata.yml` — judul, penulis, pembimbing, prodi, tahun, mode.
-- `cover.md` — Prakata/Kata Pengantar.
-- `chapters/bab*.md` — isi bab.
-- `references.bib` — daftar pustaka (APA 6th).
-- `gambar/` — gambar, tabel, diagram.
+Nama sumber = nama berkas PDF tanpa ekstensi di `sources/pdf/`
+(contoh `-Sources contoh-jurnal` -> `sources/pdf/contoh-jurnal.pdf`).
 
-### 3. Kompilasi
-```powershell
-.\laporan.ps1 build      # PDF + DOCX
-.\laporan.ps1 pdf        # hanya PDF
-.\laporan.ps1 docx       # hanya DOCX
+## Konfigurasi AI (`ai-config.json`)
+
+- `command`: baris perintah yang dipanggil skrip; placeholder
+  `{prompt_file}` diganti path berkas prompt (aman untuk teks panjang).
+  Default `["hermes","chat","--query-file","{prompt_file}","-Q"]` =
+  Hermes non-interaktif, mengikuti model/provider profil Hermes aktif
+  (teks sumber terkirim ke layanan model tersebut). Bisa diganti CLI AI
+  lain, mis. `["ollama","run","qwen3"]`.
+- `enabled: false` atau switch `-NoAi`: bab dibuat sebagai kerangka
+  `[perlu diisi]` tanpa memanggil layanan apa pun.
+- `chunk_chars` / `chunk_overlap` / `max_chunks_per_call`: pemotongan teks
+  sumber agar tidak melebihi konteks model.
+
+## Aturan sitasi (dipaksakan skrip)
+
+- Sitasi hanya boleh citekey yang ada di `sources/references.bib`.
+  Sitasi lain otomatis diganti `*[perlu diisi: sitasi ... tidak ada di
+  references.bib]*` (lihat `.\laporan.ps1 check` tahap 5).
+- Informasi yang tidak ada di sumber ditulis `[perlu diisi]`; AI dilarang
+  mengarang penulis/tahun/angka/kutipan (juga diperintahkan demikian di
+  prompt).
+
+## Struktur repo (aktif)
+
+```
+laporan.ps1            pipeline utama (satu-satunya perintah)
+ai-config.json         konfigurasi tahap AI
+templates/<nama>/      reference.docx + struktur.md + metadata.yml
+sources/pdf/           PDF sumber; sources/references.bib; sources/extracted/ (cache)
+chapters/              bab hasil AI (bab1-*.md dst., ditulis ulang saat build)
+docx.lua, apa.csl      filter & gaya sitasi pandoc
+cover.md, logo.jpg, metadata.yml, presets/   data halaman depan (metadata.yml root
+                       menimpa metadata template)
+scripts/               finalize-docx.py, docx-pagenum.py (pasca-proses penomoran)
+_legacy/               semua alur lama (PDF/Typst, npm CLI, Docker, docs)
 ```
 
-Hasil: `Laporan.pdf` dan `Laporan.docx`.
+## Dependensi
 
----
+| Alat       | Wajib | Cek versi                |
+|------------|-------|--------------------------|
+| Pandoc     | ya    | `pandoc --version`       |
+| pdftotext (Poppler) | untuk `-Sources` | `pdftotext -v` |
+| Python 3   | opsional (penomoran halaman) | `python --version` |
+| Hermes CLI | opsional (tahap AI default)  | `hermes --version` |
 
-## Matriks Perintah CLI
+Catatan: pdftotext tersedia otomatis bila Git for Windows terpasang
+(`<Git>\mingw64\bin`); skrip juga mencarinya di PATH dan di sana.
 
-| Perintah | Bash (`./laporan`) | PowerShell (`.\laporan.ps1`) | Fungsi |
-|---|---|---|---|
-| `mcp` | Didukung | Didukung | Menjalankan MCP Server |
-| `init` | Didukung | Didukung | Wizard konfigurasi metadata |
-| `setup` | Didukung | Didukung | Pasang dependensi sistem |
-| `check` | Didukung | Didukung | Audit dependensi & berkas |
-| `build` / `pdf` / `docx` | Didukung | Didukung | Kompilasi dokumen |
-| `stats` | Didukung | Didukung | Statistik kata, halaman, gambar |
-| `doctor` | Didukung | Didukung | Audit sitasi, gambar, heading |
-| `bundle` | Didukung | Didukung | Kemas menjadi arsip ZIP |
-| `preset list/show/apply/validate` | Didukung | Didukung | Kelola preset (`unej-faperta`) |
-| `view` / `watch` / `clean` | Didukung | Didukung | Lihat, pantau, bersihkan |
+## Keterbatasan
 
----
-
-## Konfigurasi (`metadata.yml`)
-
-```yaml
-title: "JUDUL KARYA TULIS"
-jenis_karya: "SKRIPSI"
-mode: "skripsi"
-author:
-  - name: "Nama Mahasiswa"
-    nim: "251510501059"
-lecturer: "Ir. Nama Dosen Pembimbing, M.P."
-lecturer_label: "Dosen Pembimbing:"
-program_studi: "Program Studi Agroteknologi"
-faculty: "Fakultas Pertanian"
-institution: "Universitas Jember"
-year: "2026"
-preset: "unej-faperta"
-daftar_gambar: false
-daftar_tabel: false
-```
-
----
-
-## Struktur Direktori
-
-```text
-laporan-generator/
-├── bin/                    # Router CLI & MCP server (Node.js)
-├── lib/                    # Modul init, setup, sync-hosts, uninstall
-├── .agents/skills/         # Agent Skill lintas platform
-├── chapters/               # Berkas bab modular (bab1..bab5)
-├── contoh/                 # Contoh nyata & pedoman PPKI FAPERTA
-├── docs/                   # Dokumentasi teknis
-├── gambar/                 # Gambar & diagram
-├── presets/unej-faperta.yml
-├── scripts/                # Utilitas Python (doctor, stats, dll.)
-├── apa.csl                 # Gaya sitasi APA 6th
-├── cover.md                # Prakata & transisi Daftar Isi
-├── docx.lua                # Filter Pandoc untuk DOCX
-├── metadata.yml            # Konfigurasi dokumen aktif
-├── references.bib          # Basis data sitasi BibTeX
-├── template.typ            # Mesin tata letak Typst
-├── laporan / laporan.ps1   # CLI Bash / PowerShell
-└── build.sh / build-docx.sh
-```
-
----
-
-## Pusat Dokumentasi
-
-- **[Panduan Pemula](GETTING-STARTED.md)**: dari instalasi hingga kompilasi pertama.
-- **[Panduan Format FAPERTA](docs/campus-guide.md)**: ringkasan aturan PPKI FAPERTA.
-- **[Cheatsheet Sintaks](docs/syntax-cheatsheet.md)**: sitasi, rumus, tabel, gambar.
-- **[Skema Metadata](docs/metadata-schema.md)**: seluruh field `metadata.yml`.
-- **[Skema Preset](docs/preset-schema.md)**: spesifikasi preset `unej-faperta`.
-- **[Panduan Template](docs/template-guide.md)**: arsitektur tipografi Typst.
-- **[Troubleshooting](docs/troubleshooting.md)**: penanganan kendala umum.
-
----
-
-## Lisensi
-
-Didistribusikan di bawah lisensi MIT. Lihat berkas [LICENSE](LICENSE).
+- PDF hasil scan (gambar) tidak terbaca pdftotext -- perlu OCR dulu.
+  Skrip memberi peringatan bila hasil ekstraksi hampir kosong.
+- `docx-pagenum.py` butuh LibreOffice (`soffice`) untuk mengisi nomor
+  halaman daftar isi; tanpa itu field tetap diperbarui Word saat dibuka.
+- Teks sumber dikirim ke layanan model pada provider Hermes aktif saat
+  tahap AI aktif; pakai `-NoAi` bila tidak ingin itu.
+- `metadata.yml` root masih memuat judul skripsi Anda dan menimpa judul
+  template - ubah `title` (dan `jenis_karya`) di `metadata.yml` bila
+  berganti jenis laporan.

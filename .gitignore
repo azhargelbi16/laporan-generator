@@ -1,8 +1,8 @@
 *.pdf
-!examples/*.pdf
-!contoh/*.pdf
+!sources/pdf/*.pdf
 *.docx
 !reference.docx
+!templates/*/reference.docx
 *.html
 *.aux
 *.log
@@ -13,6 +13,7 @@
 *.fls
 *.fdb_latexmk
 /tmp/
+sources/extracted/
 .DS_Store
 Thumbs.db
 media/
