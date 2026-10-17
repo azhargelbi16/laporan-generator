@@ -1,9 +1,0 @@
-**/__pycache__/**
-**/*.pyc
-**/*.pyo
-**/*.pyd
-**/.pytest_cache/**
-**/*.tmp
-*.tmp
-.DS_Store
-Thumbs.db

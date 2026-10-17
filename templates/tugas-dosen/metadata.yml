@@ -1,8 +1,0 @@
----
-# Metadata bawaan template makalah/tugas dosen.
-# Nilai di sini DIOBATI oleh metadata.yml di root repo (data pribadi Anda),
-# karena metadata.yml root dibaca SETELAH file ini oleh pandoc.
-jenis_karya: "MAKALAH"
-mode: "laporan"
-lang: "id-ID"
-title: "MAKALAH TUGAS KULIAH [perlu diisi]"
