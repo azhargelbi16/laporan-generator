@@ -99,7 +99,8 @@ async function runMcpTest() {
   assert.ok(presetsRes.result.content);
   const parsedPresets = JSON.parse(presetsRes.result.content[0].text);
   assert.ok(Array.isArray(parsedPresets.presets));
-  assert.ok(parsedPresets.presets.length >= 6);
+  assert.ok(parsedPresets.presets.length >= 1);
+  assert.ok(parsedPresets.presets.some((p) => (p.preset || p.id || p.name || "").includes("unej-faperta")));
   console.log("  ✔ [OK] laporan_presets returned " + parsedPresets.presets.length + " presets");
 
   // 4. Test tools/call: laporan_presets (get)
@@ -109,12 +110,12 @@ async function runMcpTest() {
     method: "tools/call",
     params: {
       name: "laporan_presets",
-      arguments: { action: "get", preset_name: "itb-ta" }
+      arguments: { action: "get", preset_name: "unej-faperta" }
     }
   });
   const getPresetRes = await waitForResponse(4);
-  assert.ok(getPresetRes.result.content[0].text.includes("itb"));
-  console.log("  ✔ [OK] laporan_presets get itb-ta valid");
+  assert.ok(getPresetRes.result.content[0].text.includes("unej"));
+  console.log("  ✔ [OK] laporan_presets get unej-faperta valid");
 
   // 5. Test tools/call: laporan_stats
   send({

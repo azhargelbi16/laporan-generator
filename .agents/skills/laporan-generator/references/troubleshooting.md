@@ -45,12 +45,12 @@ warning: failed to resolve font 'Times New Roman'
 Font yang disebutkan di dalam `template.typ` tidak tersedia. Typst hanya memakai font yang dibundel di binary-nya (termasuk Libertinus Serif dan DejaVu Sans Mono) plus font yang terinstall di sistem.
 
 ### Solusi:
-1. Gunakan font bawaan Typst: `Libertinus Serif`, `DejaVu Sans Mono`, atau `New Computer Modern`.
-2. Jika ingin font sistem lain, pastikan font tersebut sudah terinstall di OS/container.
-3. Cek daftar font yang tersedia:
+1. PPKI FAPERTA mewajibkan Times New Roman. Template memakai font tersebut bila tersedia dan otomatis beralih ke **Libertinus Serif** (font bawaan Typst) bila tidak ada — output tetap terbentuk.
+2. Untuk hasil persis Times New Roman, pasang font tersebut di OS lalu jalankan:
    ```bash
    typst fonts
    ```
+   untuk memastikan terdeteksi.
 
 ---
 

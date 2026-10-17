@@ -11,8 +11,25 @@ else
 fi
 REPORT="$OUTDIR/Laporan.pdf"
 
+# Kanonikalisasi OUTDIR agar tetap valid setelah cd ke TMPDIR.
+if [ -d "$OUTDIR" ]; then
+  OUTDIR="$(cd "$OUTDIR" && pwd)"
+  REPORT="$OUTDIR/Laporan.pdf"
+fi
+
 TMPDIR=$(mktemp -d)
 trap 'rm -rf "$TMPDIR"' EXIT
+
+# Helper path native: tool native Windows (pandoc, typst, magick, python)
+# tidak mengenal path gaya MSYS (/tmp/..., /c/...). Konversi hanya bila
+# cygpath tersedia (Git Bash/MSYS); di Linux/macOS path dipakai apa adanya.
+native_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$1"
+  else
+    printf '%s' "$1"
+  fi
+}
 
 FALLBACK_DIRS=(
   "$OUTDIR"
@@ -40,38 +57,42 @@ copy_asset "references.bib" "$TMPDIR" || true
 copy_asset "apa.csl" "$TMPDIR" || true
 copy_asset "presets" "$TMPDIR" || true
 
-if [ -d "$OUTDIR/chapters" ]; then
-  cp "$OUTDIR/chapters"/*.md "$TMPDIR/" 2>/dev/null || true
-  CHAPTER_FILES=$(find "$TMPDIR" -maxdepth 1 -name "bab*.md" | sort -V)
-  if [ -z "$CHAPTER_FILES" ]; then
-    echo "ERROR: Tidak ada berkas bab*.md di direktori chapters/."
-    exit 1
-  fi
-  INPUT_FILES=("$TMPDIR/cover.md")
-  while IFS= read -r f; do
-    [ -n "$f" ] && INPUT_FILES+=("$f")
-  done < <(find "$TMPDIR" -maxdepth 1 -name "bab*.md" | sort -V)
-else
+if [ ! -d "$OUTDIR/chapters" ]; then
   echo "ERROR: Direktori chapters/ tidak ditemukan."
   echo "Buat folder chapters/ dengan file bab laporan (contoh: bab1-pendahuluan.md dst)."
   exit 1
 fi
+cp "$OUTDIR/chapters"/*.md "$TMPDIR/" 2>/dev/null || true
 
 if [ -d "$OUTDIR/gambar" ]; then
   cp -r "$OUTDIR/gambar" "$TMPDIR/"
-  IM_CONV="convert"
-  command -v magick >/dev/null 2>&1 && IM_CONV="magick"
-  find "$TMPDIR/gambar" -type f \( -name "*.png" -o -name "*.PNG" \) -exec $IM_CONV {} -alpha off {} \; 2>/dev/null || true
 fi
 
 cd "$TMPDIR"
 
-PRESET_NAME=$(grep -E '^[[:space:]]*(preset|margin_preset):' "$TMPDIR/metadata.yml" 2>/dev/null | head -n 1 | cut -d: -f2- | tr -d '"'\''\r\n ')
+CHAPTER_FILES=$(find . -maxdepth 1 -name "bab*.md" | sort -V)
+if [ -z "$CHAPTER_FILES" ]; then
+  echo "ERROR: Tidak ada berkas bab*.md di direktori chapters/."
+  exit 1
+fi
+INPUT_FILES=("cover.md")
+while IFS= read -r f; do
+  [ -n "$f" ] && INPUT_FILES+=("$f")
+done < <(find . -maxdepth 1 -name "bab*.md" | sort -V)
+
+if [ -d "gambar" ]; then
+  IM_CONV="convert"
+  command -v magick >/dev/null 2>&1 && IM_CONV="magick"
+  find "gambar" -type f \( -name "*.png" -o -name "*.PNG" \) -exec $IM_CONV {} -alpha off {} \; 2>/dev/null || true
+fi
+
+PRESET_LINE=$(grep -E '^[[:space:]]*(preset|margin_preset):' "metadata.yml" 2>/dev/null | head -n 1 | cut -d: -f2-)
+PRESET_NAME=$(printf %s "$PRESET_LINE" | grep -o -E '[A-Za-z0-9_-]+' | head -n 1)
 PRESET_OPTS=()
-if [ -n "$PRESET_NAME" ] && [ -f "$TMPDIR/presets/${PRESET_NAME}.yml" ]; then
-  PRESET_OPTS=("--metadata-file=$TMPDIR/presets/${PRESET_NAME}.yml")
-elif [ -f "$TMPDIR/presets/standard.yml" ]; then
-  PRESET_OPTS=("--metadata-file=$TMPDIR/presets/standard.yml")
+if [ -n "$PRESET_NAME" ] && [ -f "presets/${PRESET_NAME}.yml" ]; then
+  PRESET_OPTS=("--metadata-file=presets/${PRESET_NAME}.yml")
+elif [ -f "presets/unej-faperta.yml" ]; then
+  PRESET_OPTS=("--metadata-file=presets/unej-faperta.yml")
 fi
 
 if ! pandoc \
@@ -85,8 +106,8 @@ if ! pandoc \
   --metadata=reference-section-title="DAFTAR PUSTAKA" \
   --top-level-division=chapter \
   --pdf-engine=typst \
-  --no-highlight \
-  -o "$REPORT" 2>&1; then
+  --syntax-highlighting=none \
+  -o "$(native_path "$REPORT")" 2>&1; then
   echo ""
   echo "[ERROR] BUILD GAGAL: Terjadi kesalahan saat kompilasi Pandoc/Typst."
   echo "Kemungkinan penyebab & solusi:"

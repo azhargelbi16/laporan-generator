@@ -1,78 +1,98 @@
 # Spesifikasi Skema Metadata (metadata.yml)
 
-File `metadata.yml` digunakan oleh Pandoc, template Typst (`template.typ`), dan filter DOCX (`docx.lua`) untuk mengisikan informasi sampul (cover page), judul laporan, identitas penyusun, dosen pengampu/pembimbing, serta abstrak laporan.
+`metadata.yml` mengendalikan informasi sampul, identitas penyusun, pembimbing,
+mode dokumen, dan komponen halaman depan. Dipakai oleh Pandoc, `template.typ`,
+dan `docx.lua`.
 
 ---
 
-## Struktur File & Contoh Lengkap
+## Contoh Lengkap
 
 ```yaml
 ---
-title: "Otomatisasi Pembuatan Dokumen Laporan Akademik Menggunakan Pandoc, Typst, dan Markdown"
-subtitle: "Laporan Projek Akhir Pipeline Dokumentasi"
+title: "RESPON PERTUMBUHAN TANAMAN JAGUNG (Zea mays L.) TERHADAP PUPUK ORGANIK CAIR"
+subtitle: ""
+jenis_karya: "SKRIPSI"
+mode: "skripsi"            # "skripsi" | "laporan"
+
 author:
-  - name: "Ahmad Dahlan"
-    nim: "101234567"
-  - name: "Budi Santoso"
-    nim: "101234568"
-lecturer: "Dr. Ir. Hendra Wijaya, M.T."
-lecturer_label: "Dosen Pengampu:"   # Opsional: "Dosen Pembimbing:", "Pembimbing 1:", dll.
-course: "Pengolahan Citra Digital dan Pembelajaran Mesin"
-institution: "Universitas Gadjah Mada"
-faculty: "Departemen Teknik Elektro dan Teknologi Informasi"
-year: "2025/2026"
-date: "Juli 2026"
-abstract: |
-  Laporan ini membahas pipeline otomatisasi dokumen akademik
-  menggunakan Markdown, Pandoc, Typst, dan Bash. Pipeline ini
-  memungkinkan penulisan konten laporan dalam format Markdown
-  yang kemudian dikonversi menjadi PDF berkualitas percetakan
-  melalui Pandoc dan Typst serta berkas Microsoft Word (.docx).
+  - name: "Nama Mahasiswa"
+    nim: "251510501059"
+
+lecturer: "Ir. Nama Dosen Pembimbing, M.P."
+lecturer_label: "Dosen Pembimbing:"
+course: ""
+
+program_studi: "Program Studi Agroteknologi"
+faculty: "Fakultas Pertanian"
+institution: "Universitas Jember"
+year: "2026"
+date: "Juni 2026"
+
+preset: "unej-faperta"
+
+daftar_gambar: false
+daftar_tabel: false
+daftar_lampiran: false
+
+# abstract_id: |
+#   Ringkasan dalam Bahasa Indonesia (maks. 600 kata)...
+# keywords_id:
+#   - kata kunci 1
+# abstract_en: |
+#   Summary in English...
+# keywords_en:
+#   - keyword 1
+
+# approval:
+#   hari_tanggal: "Rabu, 15 April 2026"
+#   supervisors:
+#     - name: "Ir. Nama Pembimbing, M.P."
+#       nip: "197501012000031001"
+#       role: "Dosen Pembimbing Skripsi"
+#   dean:
+#     name: "Prof. Dr. Ir. Nama Dekan, M.P."
+#     nip: "196403041989021001"
+#     role: "Dekan"
 ...
 ```
 
 ---
 
-## Penjelasan Field Metadata
+## Penjelasan Field
 
-| Field | Tipe Data | Wajib? | Keterangan |
+| Field | Tipe | Wajib | Keterangan |
 |---|---|---|---|
-| `title` | String | **Ya** | Judul utama laporan (tampil tebal di halaman sampul). |
-| `subtitle` | String | Opsional | Sub-judul atau keterangan tambahan laporan. |
-| `author` | List of Objects | **Ya** | Daftar penulis. Setiap entri memiliki `name` dan `nim`. |
-| `author[].name` | String | **Ya** | Nama lengkap mahasiswa / penyusun. |
-| `author[].nim` | String | **Ya** | Nomor Induk Mahasiswa (NIM / NPM / NISN). |
-| `lecturer` | String | **Ya** | Nama lengkap dan gelar Dosen / Guru Pengampu / Pembimbing. |
-| `lecturer_label` | String | Opsional | Label peran dosen (default: `"Dosen Pengampu:"`, bisa `"Dosen Pembimbing:"`). |
-| `course` | String | **Ya** | Nama Mata Kuliah atau Mata Pelajaran. |
-| `institution` | String | **Ya** | Nama Universitas, Institut, Politeknik, atau Sekolah. |
-| `faculty` | String | **Ya** | Nama Fakultas, Departemen, atau Program Studi. |
-| `year` | String | **Ya** | Tahun Ajaran (contoh: `2025/2026`). |
-| `date` | String | Opsional | Bulan dan Tahun pembuatan (contoh: `Juli 2026`). |
-| `daftar_gambar` | Boolean | Opsional | Aktifkan halaman DAFTAR GAMBAR (`true`/`false`, default: `false`). |
-| `daftar_tabel` | Boolean | Opsional | Aktifkan halaman DAFTAR TABEL (`true`/`false`, default: `false`). |
-| `abstract` | Multiline String | Opsional | Ringkasan/Abstrak laporan dalam Bahasa Indonesia. |
+| `title` | String | Ya | Judul karya tulis (KAPITAL, bukan kalimat) |
+| `subtitle` | String | Tidak | Subjudul / anak judul |
+| `jenis_karya` | String | Ya | `SKRIPSI`, nama laporan, dsb. |
+| `mode` | String | Ya | `skripsi` (front matter lengkap) atau `laporan` |
+| `author` | List | Ya | Daftar penulis (`name`, `nim`) |
+| `lecturer` | String | Ya | Nama dosen pembimbing/pengampu + gelar |
+| `lecturer_label` | String | Tidak | Label dosen (default "Dosen Pengampu:") |
+| `course` | String | Tidak | Nama mata kuliah (untuk laporan kuliah) |
+| `program_studi` | String | Ya | Program studi |
+| `faculty` | String | Ya | Fakultas (Fakultas Pertanian) |
+| `institution` | String | Ya | Universitas Jember |
+| `year` | String | Ya | Tahun lulus (mis. `2026`) |
+| `date` | String | Tidak | Bulan/tahun (mis. `Juni 2026`) |
+| `preset` | String | Ya | `unej-faperta` |
+| `daftar_gambar` | Boolean | Tidak | Aktifkan halaman DAFTAR GAMBAR |
+| `daftar_tabel` | Boolean | Tidak | Aktifkan halaman DAFTAR TABEL |
+| `daftar_lampiran` | Boolean | Tidak | Aktifkan halaman DAFTAR LAMPIRAN |
+| `abstract_id` | Multiline | Tidak | Ringkasan Bahasa Indonesia |
+| `abstract_en` | Multiline | Tidak | Summary Bahasa Inggris |
+| `keywords_id` / `keywords_en` | List | Tidak | Kata kunci |
+| `approval` | Object | Tidak | Lembar pengesahan (mode skripsi) |
 
 ---
 
-## Dukungan Multi-Author (Individu / Kelompok)
+## Multi-Author
 
-Skema ini mendukung jumlah penulis dinamis (1 orang hingga banyak orang):
-
-* **Single Author (Individu)**:
-  ```yaml
-  author:
-    - name: "Budi Santoso"
-      nim: "101234567"
-  ```
-
-* **Multi Author (Kelompok)**:
-  ```yaml
-  author:
-    - name: "Mahasiswa A"
-      nim: "101234561"
-    - name: "Mahasiswa B"
-      nim: "101234562"
-    - name: "Mahasiswa C"
-      nim: "101234563"
-  ```
+```yaml
+author:
+  - name: "Mahasiswa A"
+    nim: "251510501059"
+  - name: "Mahasiswa B"
+    nim: "251510501060"
+```

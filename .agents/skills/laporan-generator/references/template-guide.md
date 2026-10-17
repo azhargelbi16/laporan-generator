@@ -1,32 +1,30 @@
 # Panduan Arsitektur Template Typst (template.typ)
 
-File `template.typ` merupakan jantung dari pemformatan visual PDF pada **Laporan Generator**. Template ini dirancang untuk memenuhi standar penyusunan laporan akademik resmi di Indonesia, dan dikompilasi dengan **Typst** sebagai engine typesetting.
+File `template.typ` adalah inti pemformatan visual PDF. Template ini mengikuti
+Buku Pedoman Penulisan Karya Tulis Ilmiah (PPKI) FAPERTA Universitas Jember.
 
-> **Catatan**: Pipeline utama sepenuhnya menggunakan **Typst** (`template.typ`). Template LaTeX lama diarsipkan pada branch `legacy/latex-engine`.
+> **Catatan**: Pipeline utama memakai **Typst** (`template.typ`).
 
 ---
 
 ## Desain Arsitektur & Pemilihan Font
 
-### 1. Pemilihan Font (Libertinus Serif)
-* Standardisasi karya ilmiah di Indonesia mewajibkan penggunaan font tipe *Times New Roman* 12pt.
-* Untuk menjamin portabilitas kompilasi cross-platform tanpa dependensi font eksternal, template menggunakan **Libertinus Serif** (`Libertinus Serif`) yang sudah dibundel langsung di dalam binary Typst.
-* Blok kode menggunakan **DejaVu Sans Mono** (juga font bawaan Typst).
+### 1. Pemilihan Font
+* PPKI FAPERTA mewajibkan **Times New Roman 12 pt**.
+* Template memakai `font_family` dari preset (default `Times New Roman`) dengan
+  `font_fallback` ke **Libertinus Serif** bila font sistem tidak tersedia.
+* Blok kode memakai **DejaVu Sans Mono** (font bawaan Typst).
 
 ### 2. Pengaturan Margin & Spacing
 ```typst
-#set page(
-  paper: "a4",
-  margin: (top: 2cm, bottom: 3cm, left: 2.5cm, right: 2.5cm),
+#let doc-margin = (
+  top: 4cm, bottom: 3cm, left: 4cm, right: 3cm,   // dari preset
 )
-#set text(font: "Libertinus Serif", size: 12pt)
-#set par(justify: true, leading: 1.5em)
+#set page(paper: "a4", margin: doc-margin)
+#set par(justify: true, leading: 0.9em, first-line-indent: 1cm)
 ```
-* Margin Kiri & Kanan: 2.5 cm
-* Margin Atas: 2.0 cm
-* Margin Bawah: 3.0 cm
-* Spasi Antar Baris: 1.5 spasi (*one half spacing*)
-* Paragraf rata kanan-kiri (*justify*)
+* Margin mengikuti **preset aktual** (`margin_top/bottom/left/right`), bukan hardcode.
+* Indentasi paragraf 1 cm; paragraf rata kanan-kiri.
 
 ---
 
@@ -35,30 +33,24 @@ File `template.typ` merupakan jantung dari pemformatan visual PDF pada **Laporan
 ### 1. Format Bab & Heading
 ```typst
 #set heading(numbering: (..ns) => {
-  if ns.len() == 1 {
-    "BAB " + numbering("I", ns.at(0)) + linebreak()
-  } else if ns.len() == 2 {
-    numbering("1.1", ..ns)
-  } else {
-    numbering("1.1.1", ..ns)
-  }
+  if ns.len() == 1 { "BAB " + numbering("1", ns.at(0)) + "." }  // BAB 1.
+  else if ns.len() == 2 { numbering("1.1.", ..ns) }             // 1.1.
+  else { numbering("1.1.1", ..ns) }                             // 1.1.1
 })
 ```
-* **Bab**: Diformat dengan Angka Romawi (`BAB I`, `BAB II`, `BAB III`, dst). Angka Romawi dan judul dipisahkan oleh *line break*.
-* **Sub-bab**: Diformat dengan Angka Arab (`1.1`, `1.2`, `2.1`).
-* **Sub-sub-bab**: Diformat dengan Angka Arab 3 tingkat (`1.1.1`, `1.1.2`).
-* **Heading tanpa nomor** (Kata Pengantar, Daftar Isi, Daftar Pustaka): menggunakan `{-}` di Markdown yang diterjemahkan Pandoc menjadi `#heading(level: 1, numbering: none)`.
+* **Bab**: default angka Arab + titik (`BAB 1.`), opsi Romawi (`BAB I`) via
+  `heading_chapter_num_format` di preset.
+* **Subbab**: `1.1.` (tebal). **Subsubbab**: `1.1.1` (tidak tebal).
+* **Heading tanpa nomor** (Prakata, Daftar Isi, Daftar Pustaka): gunakan `{-}`.
 
-> **Catatan**: Jangan menulis pola `"BAB I"` langsung sebagai format string `numbering(...)`. Typst menginterpretasikan rangkaian huruf `BAB` sebagai pola huruf dan memotong angka Romawinya. Selalu concat literal secara manual: `"BAB " + numbering("I", n)`.
-
-### 2. Penomoran Halaman (frontmatter vs mainmatter)
-* **Bagian Depan** (Kata Pengantar, Daftar Isi): Menggunakan penomoran Romawi kapital (`I`, `II`, `III`) di bagian tengah bawah. Diatur di `cover.md`:
+### 2. Penomoran Halaman (front matter vs batang tubuh)
+* **Bagian awal**: Romawi kecil (`i, ii, iii`) di tengah bawah.
   ```typst
-  #set page(numbering: "I")
+  #set page(numbering: "i", number-align: bottom + center)
   ```
-* **Bagian Utama** (BAB I hingga BAB V): Menggunakan penomoran Angka Arab (`1`, `2`, `3`) berurutan, di-reset ulang:
+* **Bagian utama**: angka Arab (`1, 2, 3`) di kanan atas, di-reset per bab.
   ```typst
-  #set page(numbering: "1")
+  #set page(numbering: "1", number-align: right + top)
   #counter(page).update(1)
   ```
 
@@ -66,17 +58,8 @@ File `template.typ` merupakan jantung dari pemformatan visual PDF pada **Laporan
 
 ## Halaman Sampul (Cover)
 
-Bagian sampul dirender dari metadata `metadata.yml` dengan variabel: `title`, `subtitle`, `course`, `lecturer`, `authors`, `institution`, `logo`, `year`.
-
-```typst
-#block(
-  width: 100%,
-  align(center)[
-    #image(logo, width: 4cm)
-    ...
-  ]
-)
-```
+Dirender dari `metadata.yml`: `title`, `subtitle`, `jenis_karya`, `course`,
+`lecturer`, `author[]`, `program_studi`, `faculty`, `institution`, `year`, `logo`.
 
 ---
 
@@ -84,17 +67,16 @@ Bagian sampul dirender dari metadata `metadata.yml` dengan variabel: `title`, `s
 
 ### 1. Tabel
 ```typst
-#show table: set stroke(0.75pt)
+#set table(stroke: 0.5pt + luma(140), inset: 4pt)
 #show table.header: set text(weight: "bold")
 ```
-* Header tabel dicetak tebal, garis tabel 0.75pt.
+* Garis tabel tipis; header tebal. Caption `Tabel 1.1.` di atas (Sentence case).
 
 ### 2. Gambar
-* Caption gambar dirender di bawah gambar (`#show figure: set figure.caption(position: bottom)`).
-* Gambar diproses oleh ImageMagick di `build.sh` (alpha channel dihapus) sebelum dikompilasi.
+* Caption `Gambar 1.1.` di bawah gambar.
+* PNG dinormalisasi saluran alfa oleh ImageMagick di `build.sh` sebelum kompilasi.
 
 ### 3. Blok Kode
 ```typst
-#show raw: set text(font: "DejaVu Sans Mono", size: 9pt)
+#show raw.where(block: true): set text(font: "DejaVu Sans Mono", size: 9pt)
 ```
-* Blok kode menggunakan font monospaced 9pt dengan latar abu-abu muda (`#show raw: set block(fill: luma(240))`).

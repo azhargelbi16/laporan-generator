@@ -63,11 +63,11 @@ def get_project_root():
 class TestValidatePreset(unittest.TestCase):
     def test_parse_simple_yaml(self):
         presets_dir = get_presets_dir()
-        test_yaml = os.path.join(presets_dir, "standard.yml")
+        test_yaml = os.path.join(presets_dir, "unej-faperta.yml")
         self.assertTrue(os.path.exists(test_yaml))
         data = validate_preset.parse_simple_yaml(test_yaml)
-        self.assertEqual(data.get("preset_id"), "standard")
-        self.assertEqual(data.get("margin_top"), "2cm")
+        self.assertEqual(data.get("preset_id"), "unej-faperta")
+        self.assertEqual(data.get("margin_top"), "4cm")
 
     def test_validate_all_presets(self):
         presets_dir = get_presets_dir()
@@ -279,11 +279,13 @@ class TestFrontMatterOptIn(unittest.TestCase):
             self.skipTest("Node.js runtime not found in PATH")
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_js = tmpdir.replace(chr(92), "/")
+            init_js = os.path.join(ROOT_DIR, "lib", "init.js").replace(chr(92), "/")
             node_code = f"""
             const path = require('path');
-            const {{ initProject }} = require('{os.path.join(ROOT_DIR, "lib/init.js")}');
-            initProject({{ targetDir: '{tmpdir}/test_f', daftar_gambar: 'false', daftar_tabel: false, silent: true }});
-            initProject({{ targetDir: '{tmpdir}/test_t', daftar_gambar: 'true', daftar_tabel: true, silent: true }});
+            const {{ initProject }} = require('{init_js}');
+            initProject({{ targetDir: '{tmpdir_js}/test_f', daftar_gambar: 'false', daftar_tabel: false, silent: true }});
+            initProject({{ targetDir: '{tmpdir_js}/test_t', daftar_gambar: 'true', daftar_tabel: true, silent: true }});
             """
             proc = subprocess.run(["node", "-e", node_code], capture_output=True, text=True)
             self.assertEqual(proc.returncode, 0, f"Node initProject failed: {proc.stderr}")

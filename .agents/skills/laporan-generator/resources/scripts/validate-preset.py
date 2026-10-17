@@ -107,9 +107,26 @@ def validate_preset_file(filepath):
         errors.append(f"'heading_chapter_num_format' harus 'roman' atau 'arabic', bukan '{fmt}'.")
 
     # 5. Booleans
-    for b in ["heading_sub_dot", "heading_subsub_dot", "cover_show_lecturer"]:
+    bool_fields = [
+        "heading_chapter_dot", "heading_sub_dot", "heading_subsub_dot",
+        "heading_subsub_bold", "cover_show_lecturer",
+    ]
+    for b in bool_fields:
         if b in data and str(data[b]).lower() not in ("true", "false"):
             errors.append(f"Field '{b}' harus berupa boolean (true/false), bukan '{data[b]}'.")
+
+    # 6. Spasi baris (angka, mis. 1.5)
+    ls = data.get("line_spacing")
+    if ls:
+        try:
+            float(str(ls).replace(",", "."))
+        except ValueError:
+            errors.append(f"Field 'line_spacing' harus berupa angka (contoh: 1.5), bukan '{ls}'.")
+
+    # 7. Sitasi (opsional)
+    cite = data.get("citation_style")
+    if cite and cite not in ("apa-6th", "apa-7th", "ieee"):
+        errors.append(f"'citation_style' tidak dikenal: '{cite}' (didukung: apa-6th, apa-7th, ieee).")
 
     return errors
 

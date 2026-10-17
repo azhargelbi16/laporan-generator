@@ -11,6 +11,21 @@ else
 fi
 REPORT="$OUTDIR/Laporan.docx"
 
+# Kanonikalisasi OUTDIR agar tetap valid setelah cd ke TMPDIR.
+if [ -d "$OUTDIR" ]; then
+  OUTDIR="$(cd "$OUTDIR" && pwd)"
+  REPORT="$OUTDIR/Laporan.docx"
+fi
+
+# Helper path native: lihat build.sh (konversi path MSYS -> Windows).
+native_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -w "$1"
+  else
+    printf '%s' "$1"
+  fi
+}
+
 # Resolve Python (handle WindowsApps stub redirector on Windows)
 PYTHON_BIN="python3"
 if ! command -v python3 >/dev/null 2>&1 || ! python3 -V >/dev/null 2>&1; then
@@ -62,24 +77,27 @@ elif [ -d "$DIR/gambar" ]; then
 fi
 
 cp "$OUTDIR/chapters"/*.md "$TMPDIR/" 2>/dev/null || true
-CHAPTER_FILES=$(find "$TMPDIR" -maxdepth 1 -name "bab*.md" | sort -V)
+
+cd "$TMPDIR"
+
+# Path RELATIF terhadap TMPDIR (lihat build.sh).
+CHAPTER_FILES=$(find . -maxdepth 1 -name "bab*.md" | sort -V)
 if [ -z "$CHAPTER_FILES" ]; then
   echo "ERROR: Tidak ada berkas bab*.md di direktori chapters/."
   exit 1
 fi
-INPUT_FILES=("$TMPDIR/cover.md")
+INPUT_FILES=("cover.md")
 while IFS= read -r f; do
   [ -n "$f" ] && INPUT_FILES+=("$f")
-done < <(find "$TMPDIR" -maxdepth 1 -name "bab*.md" | sort -V)
+done < <(find . -maxdepth 1 -name "bab*.md" | sort -V)
 
-cd "$TMPDIR"
-
-PRESET_NAME=$(grep -E '^[[:space:]]*(preset|margin_preset):' "$TMPDIR/metadata.yml" 2>/dev/null | head -n 1 | cut -d: -f2- | tr -d '"'\''\r\n ')
+PRESET_LINE=$(grep -E '^[[:space:]]*(preset|margin_preset):' "metadata.yml" 2>/dev/null | head -n 1 | cut -d: -f2-)
+PRESET_NAME=$(printf %s "$PRESET_LINE" | grep -o -E '[A-Za-z0-9_-]+' | head -n 1)
 PRESET_OPTS=()
-if [ -n "$PRESET_NAME" ] && [ -f "$TMPDIR/presets/${PRESET_NAME}.yml" ]; then
-  PRESET_OPTS=("--metadata-file=$TMPDIR/presets/${PRESET_NAME}.yml")
-elif [ -f "$TMPDIR/presets/standard.yml" ]; then
-  PRESET_OPTS=("--metadata-file=$TMPDIR/presets/standard.yml")
+if [ -n "$PRESET_NAME" ] && [ -f "presets/${PRESET_NAME}.yml" ]; then
+  PRESET_OPTS=("--metadata-file=presets/${PRESET_NAME}.yml")
+elif [ -f "presets/unej-faperta.yml" ]; then
+  PRESET_OPTS=("--metadata-file=presets/unej-faperta.yml")
 fi
 
 pandoc \
@@ -93,10 +111,10 @@ pandoc \
   --top-level-division=chapter \
   --reference-doc="reference.docx" \
   --lua-filter="docx.lua" \
-  -o "$TMPDIR/Laporan-tmp.docx" 2>&1
+  -o "Laporan-tmp.docx" 2>&1
 
-FINALIZE_SCRIPT="$TMPDIR/scripts/finalize-docx.py"
-PAGENUM_SCRIPT="$TMPDIR/scripts/docx-pagenum.py"
+FINALIZE_SCRIPT="scripts/finalize-docx.py"
+PAGENUM_SCRIPT="scripts/docx-pagenum.py"
 if [ ! -f "$FINALIZE_SCRIPT" ]; then
   for base in "${FALLBACK_DIRS[@]}"; do
     if [ -f "$base/scripts/finalize-docx.py" ]; then
@@ -115,8 +133,8 @@ if [ ! -f "$PAGENUM_SCRIPT" ]; then
 fi
 
 export PYTHONUTF8=1
-"$PYTHON_BIN" "$FINALIZE_SCRIPT" "$TMPDIR/Laporan-tmp.docx" "$TMPDIR/Laporan-sect.docx"
-"$PYTHON_BIN" "$PAGENUM_SCRIPT" "$TMPDIR/Laporan-sect.docx" "$REPORT"
+"$PYTHON_BIN" "$(native_path "$FINALIZE_SCRIPT")" "Laporan-tmp.docx" "Laporan-sect.docx"
+"$PYTHON_BIN" "$(native_path "$PAGENUM_SCRIPT")" "Laporan-sect.docx" "$(native_path "$REPORT")"
 
 echo "=== DOCX BERHASIL DIBUAT ==="
 echo "Lokasi: $REPORT"

@@ -18,12 +18,13 @@ Options:
 import argparse
 import os
 import re
+import shutil
 import subprocess
 import sys
 
 
 def extract_text_from_pdf(pdf_path):
-    """Ekstraksi teks dari PDF menggunakan pdftotext (poppler-utils) atau fallback."""
+    """Ekstraksi teks dari PDF secara portabel (pdftotext lintas platform atau fallback)."""
     if not os.path.exists(pdf_path):
         print(f"[ERROR] Berkas '{pdf_path}' tidak ditemukan.", file=sys.stderr)
         sys.exit(1)
@@ -33,12 +34,13 @@ def extract_text_from_pdf(pdf_path):
         with open(pdf_path, "r", encoding="utf-8", errors="ignore") as f:
             return f.read()
 
-    # Cek pdftotext
-    if subprocess.run(["which", "pdftotext"], capture_output=True).returncode == 0:
+    # Cek pdftotext (portabel: shutil.which bekerja di Windows & Unix)
+    pdftotext = shutil.which("pdftotext")
+    if pdftotext:
         try:
             # Ambil maksimal 40 halaman pertama (bab pedoman format biasanya di bagian awal)
             res = subprocess.run(
-                ["pdftotext", "-f", "1", "-l", "40", "-layout", pdf_path, "-"],
+                [pdftotext, "-f", "1", "-l", "40", "-layout", pdf_path, "-"],
                 capture_output=True,
                 text=True,
                 check=True,
@@ -47,12 +49,23 @@ def extract_text_from_pdf(pdf_path):
         except Exception as e:
             print(f"[WARN] pdftotext gagal: {e}", file=sys.stderr)
 
-    # Fallback jika file binary PDF tidak bisa diurai via pdftotext
-    print("[WARN] pdftotext tidak tersedia, membaca teks mentah...", file=sys.stderr)
+    # Fallback 1: pustaka Python (pymupdf) bila tersedia
+    try:
+        import fitz  # pymupdf
+
+        doc = fitz.open(pdf_path)
+        pages = [doc[i].get_text() for i in range(min(doc.page_count, 40))]
+        doc.close()
+        if pages:
+            return "\n".join(pages)
+    except Exception:
+        pass
+
+    # Fallback 2: baca string teks mentah dalam PDF
+    print("[WARN] pdftotext/pymupdf tidak tersedia, membaca teks mentah...", file=sys.stderr)
     try:
         with open(pdf_path, "rb") as f:
             raw = f.read().decode("latin1", errors="ignore")
-            # Ekstraksi string teks dalam kurung PDF (Tj / TJ)
             strings = re.findall(r"\(([^\)]+)\)\s*Tj", raw)
             return "\n".join(strings) if strings else raw
     except Exception as e:
@@ -131,10 +144,11 @@ def detect_margins(text):
 def detect_typography(text):
     """Deteksi font family, size, line spacing, dan indent."""
     typo = {
-        "font_family": "Libertinus Serif",
+        "font_family": "Times New Roman",
+        "font_fallback": "Libertinus Serif",
         "font_size": "12pt",
-        "line_spacing": "0.75em",  # 0.75em = 1.5 spasi di Typst
-        "first_line_indent": "1.25cm",
+        "line_spacing": "1.5",
+        "first_line_indent": "1cm",
     }
 
     # Deteksi Font
@@ -143,23 +157,23 @@ def detect_typography(text):
     elif re.search(r"Calibri", text, re.I):
         typo["font_family"] = "Calibri"
     elif re.search(r"Times\s*New\s*Roman", text, re.I):
-        typo["font_family"] = "Libertinus Serif"
+        typo["font_family"] = "Times New Roman"
 
     # Deteksi Ukuran Font
     m_sz = re.search(r"(?:ukuran|font\s*size|size)\s*[:=]?\s*([0-9]+)\s*(?:pt|point)?", text, re.I)
     if m_sz:
         typo["font_size"] = f"{m_sz.group(1)}pt"
 
-    # Deteksi Spasi Baris
+    # Deteksi Spasi Baris (angka, konsisten dengan preset)
     if re.search(r"(?:spasi|line\s*spacing)\s*[:=]?\s*(?:ganda|2(?:\.0)?|double)", text, re.I):
-        typo["line_spacing"] = "1.0em"  # double spacing
+        typo["line_spacing"] = "2.0"
     elif re.search(r"(?:spasi|line\s*spacing)\s*[:=]?\s*1[,.]15", text, re.I):
-        typo["line_spacing"] = "0.55em"
+        typo["line_spacing"] = "1.15"
     elif re.search(r"(?:spasi|line\s*spacing)\s*[:=]?\s*(?:1[,.]5|satu\s*setengah)", text, re.I):
-        typo["line_spacing"] = "0.75em"
+        typo["line_spacing"] = "1.5"
 
     # Deteksi Indentasi
-    m_ind = re.search(r"(?:indentasi|alinea|awal\s*paragraf)\s*[:=]?\s*([0-9]+(?:[.,][0-9]+)?)\s*cm", text, re.I)
+    m_ind = re.search(r"(?:indentasi|alinea|awal\s*paragraf|tabulasi)\D{0,20}?([0-9]+(?:[.,][0-9]+)?)\s*cm", text, re.I)
     if m_ind:
         typo["first_line_indent"] = f"{m_ind.group(1).replace(',', '.')}cm"
 
@@ -170,20 +184,30 @@ def detect_headings(text):
     """Deteksi format penomoran bab dan sub-bab."""
     headings = {
         "chapter_prefix": "BAB ",
-        "chapter_num_format": "roman",
+        "chapter_num_format": "arabic",
+        "chapter_dot": True,
         "sub_dot": True,
         "subsub_dot": False,
+        "subsub_bold": False,
     }
 
     # Cek BAB 1 vs BAB I
-    if re.search(r"BAB\s+[0-9]+\b", text) and not re.search(r"BAB\s+[IVXLCDM]+\b", text):
+    if re.search(r"BAB\s+[0-9]+", text) and not re.search(r"\bBAB\s+[IVXLCDM]+\b", text):
         headings["chapter_num_format"] = "arabic"
+    elif re.search(r"\bBAB\s+[IVXLCDM]+\b", text) and not re.search(r"BAB\s+[0-9]+", text):
+        headings["chapter_num_format"] = "roman"
+
+    # Cek titik setelah nomor bab: "BAB 1." vs "BAB 1"
+    if re.search(r"BAB\s+(?:[0-9]+|[IVXLCDM]+)\.\s", text):
+        headings["chapter_dot"] = True
+    elif re.search(r"BAB\s+(?:[0-9]+|[IVXLCDM]+)\s+[A-Z]", text):
+        headings["chapter_dot"] = False
 
     # Cek sub-bab trailing dot (1.1. vs 1.1)
-    if re.search(r"\b1\.1\s+[A-Z]", text):
-        headings["sub_dot"] = False
-    elif re.search(r"\b1\.1\.\s+[A-Z]", text):
+    if re.search(r"\b\d\.\d\.\s+[A-Z]", text):
         headings["sub_dot"] = True
+    elif re.search(r"\b\d\.\d\s+[A-Z]", text):
+        headings["sub_dot"] = False
 
     return headings
 
@@ -201,7 +225,7 @@ def detect_cover(text):
 
 
 def build_preset_yaml(preset_id, name, margins, typo, headings, cover):
-    """Hasilkan string YAML preset standar."""
+    """Hasilkan string YAML preset standar (skema FAPERTA UNEJ)."""
     hide_lecturer_yaml = ""
     if not cover["show_lecturer"]:
         hide_lecturer_yaml = "\ncover_hide_lecturer: true"
@@ -220,6 +244,7 @@ margin_right: {margins['right']}
 
 # 2. Tipografi & Spasi
 font_family: "{typo['font_family']}"
+font_fallback: "{typo.get('font_fallback', 'Libertinus Serif')}"
 font_size: {typo['font_size']}
 line_spacing: {typo['line_spacing']}
 first_line_indent: {typo['first_line_indent']}
@@ -227,19 +252,30 @@ first_line_indent: {typo['first_line_indent']}
 # 3. Penomoran Heading
 heading_chapter_prefix: "{headings['chapter_prefix']}"
 heading_chapter_num_format: "{headings['chapter_num_format']}"
+heading_chapter_dot: {str(headings.get('chapter_dot', True)).lower()}
 heading_sub_dot: {str(headings['sub_dot']).lower()}
 heading_subsub_dot: {str(headings['subsub_dot']).lower()}
+heading_subsub_bold: {str(headings.get('subsub_bold', False)).lower()}
 
-# 4. Pengaturan Halaman Sampul
+# 4. Nomor Halaman
+page_number_front: "i"
+page_number_front_position: "bottom-center"
+page_number_body_position: "top-right"
+page_number_chapter_first_position: "bottom-center"
+
+# 5. Pengaturan Halaman Sampul
 cover_show_lecturer: {str(cover['show_lecturer']).lower()}{hide_lecturer_yaml}
 cover_logo_width: {cover['logo_width']}
+
+# 6. Sitasi
+citation_style: "apa-6th"
 """
 
 
 def main():
     parser = argparse.ArgumentParser(description="Scan pedoman penulisan PDF dan buat preset kampus otomatis.")
     parser.add_argument("pdf_path", help="Path ke berkas PDF pedoman penulisan kampus")
-    parser.add_argument("--preset-id", help="ID unik preset (contoh: unpad-skripsi)")
+    parser.add_argument("--preset-id", help="ID unik preset (contoh: unej-faperta)")
     parser.add_argument("--name", help="Nama lengkap institusi / preset")
     parser.add_argument("--output-dir", default="presets", help="Direktori output penyimpanan preset")
     parser.add_argument("--non-interactive", action="store_true", help="Jalankan otomatis tanpa prompt interaktif")
@@ -266,7 +302,7 @@ def main():
     print(f"  * Nama Institusi  : {inst_name}")
     print(f"  * Margin Halaman  : Atas {margins['top']}, Bawah {margins['bottom']}, Kiri {margins['left']}, Kanan {margins['right']}")
     print(f"  * Tipografi       : {typo['font_family']} {typo['font_size']} (Spasi: {typo['line_spacing']}, Indent: {typo['first_line_indent']})")
-    print(f"  * Penomoran Bab   : {headings['chapter_prefix']}{'I' if headings['chapter_num_format'] == 'roman' else '1'} (Sub-bab dot: {headings['sub_dot']})")
+    print(f"  * Penomoran Bab   : {headings['chapter_prefix']}{'I' if headings['chapter_num_format'] == 'roman' else '1'}{'.' if headings.get('chapter_dot', True) else ''} (Sub-bab dot: {headings['sub_dot']})")
     print(f"  * Sampul Depan    : Dosen={'Ya' if cover['show_lecturer'] else 'Tidak'}, Lebar Logo={cover['logo_width']}")
     print("=" * 56 + "\n")
 

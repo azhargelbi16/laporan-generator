@@ -1,7 +1,8 @@
 -- docx.lua: penomoran heading dan cover page untuk output DOCX.
---  - Heading 1: "BAB I PENDAHULUAN" (huruf kapital, angka romawi)
---  - Heading 2: "1.1. Sub Bab" (titik di akhir nomor)
---  - Heading 3: "1.1.1 Sub Sub Bab"
+--  Mengikuti Pedoman Penulisan Karya Tulis Ilmiah (PPKI) FAPERTA UNEJ.
+--  - Heading 1: "BAB 1. PENDAHULUAN" (kapital, angka Arab + titik) atau "BAB I ..." (roman)
+--  - Heading 2: "1.1. Sub Bab" (bold, diakhiri titik)
+--  - Heading 3: "1.1.1 Sub Sub Bab" (tidak bold, tanpa titik)
 --  - Heading dengan atribut {-} (unnumbered) dilewati tanpa penomoran.
 --  - Cover page dibangun dari metadata (logo, judul, penulis, institusi)
 --    meniru cover PDF, menggantikan title block bawaan pandoc.
@@ -13,7 +14,10 @@ local sub = 0
 local subsub = 0
 local toc_entries = {}
 local chapter_prefix = "BAB "
-local chapter_num_fmt = "roman"
+local chapter_num_fmt = "arabic"
+local chapter_dot = true
+local sub_dot = true
+local subsub_dot = false
 
 local function is_unnumbered(el)
   for _, cls in ipairs(el.attr.classes or {}) do
@@ -180,6 +184,12 @@ local function Meta(meta)
   if fmt ~= "" then
     chapter_num_fmt = fmt
   end
+  local cd = meta_str(meta, "heading_chapter_dot")
+  if cd ~= "" then chapter_dot = (cd == "true") end
+  local sd = meta_str(meta, "heading_sub_dot")
+  if sd ~= "" then sub_dot = (sd == "true") end
+  local ssd = meta_str(meta, "heading_subsub_dot")
+  if ssd ~= "" then subsub_dot = (ssd == "true") end
 end
 
 function Header(el)
@@ -203,6 +213,9 @@ function Header(el)
     subsub = 0
     local bnum = format_chapter_number(bab)
     local full_bab = chapter_prefix .. bnum
+    if chapter_dot then
+      full_bab = full_bab .. "."
+    end
     if chapter_prefix == "" then
       full_bab = bnum .. "."
       toc_entries[#toc_entries + 1] = {
@@ -228,20 +241,22 @@ function Header(el)
   elseif el.level == 2 then
     sub = sub + 1
     subsub = 0
+    local num = bab .. "." .. sub .. (sub_dot and "." or "")
     toc_entries[#toc_entries + 1] = {
       level = 2,
       id = el.identifier,
-      text = bab .. "." .. sub .. ". " .. title,
+      text = num .. " " .. title,
     }
-    el.content = pandoc.Str(bab .. "." .. sub .. ". " .. title)
+    el.content = pandoc.Str(num .. " " .. title)
   elseif el.level == 3 then
     subsub = subsub + 1
+    local num = bab .. "." .. sub .. "." .. subsub .. (subsub_dot and "." or "")
     toc_entries[#toc_entries + 1] = {
       level = 3,
       id = el.identifier,
-      text = bab .. "." .. sub .. "." .. subsub .. " " .. title,
+      text = num .. " " .. title,
     }
-    el.content = pandoc.Str(bab .. "." .. sub .. "." .. subsub .. " " .. title)
+    el.content = pandoc.Str(num .. " " .. title)
   end
   return el
 end
@@ -341,8 +356,10 @@ function Pandoc(doc)
   local title = meta_str(meta, "title")
   local subtitle = meta_str(meta, "subtitle")
   local course = meta_str(meta, "course")
+  local jenis_karya = meta_str(meta, "jenis_karya")
   local lecturer = meta_str(meta, "lecturer")
   local faculty = meta_str(meta, "faculty")
+  local program_studi = meta_str(meta, "program_studi")
   local institution = meta_str(meta, "institution")
   local year = meta_str(meta, "year")
   local show_dg = (meta_bool(meta, "daftar_gambar") or meta_bool(meta, "list_of_figures"))
@@ -363,8 +380,11 @@ function Pandoc(doc)
     if subtitle ~= "" then
       blocks[#blocks + 1] = para({ pandoc.Str(string.upper(subtitle)) }, "CoverSubtitle")
     end
+    if jenis_karya ~= "" then
+      blocks[#blocks + 1] = para({ pandoc.Strong(pandoc.Str(string.upper(jenis_karya))) }, "CoverCourse")
+    end
     if course ~= "" then
-      blocks[#blocks + 1] = para({ pandoc.Strong(pandoc.Str(course)) }, "CoverCourse")
+      blocks[#blocks + 1] = para({ pandoc.Emph(pandoc.Str(course)) }, "CoverCourse")
     end
     local hide_lecturer = meta_str(meta, "cover_hide_lecturer") == "true" or meta_str(meta, "cover_show_lecturer") == "false"
     if lecturer ~= "" and not hide_lecturer then
@@ -418,8 +438,11 @@ function Pandoc(doc)
     end
   end
 
-  if faculty ~= "" or institution ~= "" or year ~= "" then
+  if faculty ~= "" or program_studi ~= "" or institution ~= "" or year ~= "" then
     blocks[#blocks + 1] = spacer(640)
+    if program_studi ~= "" then
+      blocks[#blocks + 1] = para({ pandoc.Str(string.upper(program_studi)) }, "CoverInstitution")
+    end
     if faculty ~= "" then
       blocks[#blocks + 1] = para({ pandoc.Str(string.upper(faculty)) }, "CoverInstitution")
     end
@@ -434,8 +457,48 @@ function Pandoc(doc)
   -- Section break (Next Page) penutup cover: tanpa footer/nomor halaman
   blocks[#blocks + 1] = pandoc.RawBlock(
     "openxml",
-    '<w:p><w:pPr><w:sectPr><w:footnotePr><w:numRestart w:val="eachSect"/></w:footnotePr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1417" w:bottom="1701" w:left="1417" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:pPr></w:p>'
+    '<w:p><w:pPr><w:sectPr><w:footnotePr><w:numRestart w:val="eachSect"/></w:footnotePr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="2268" w:right="1701" w:bottom="1701" w:left="2268" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:pPr></w:p>'
   )
+
+  -- === Lembar Pengesahan (jika ada) ===
+  if meta["approval"] ~= nil then
+    local ap = meta["approval"]
+    local function ap_str(k)
+      if ap[k] == nil then return "" end
+      return pandoc.utils.stringify(ap[k])
+    end
+    blocks[#blocks + 1] = para({ pandoc.Strong(pandoc.Str("LEMBAR PENGESAHAN")) }, "FrontHeading")
+    blocks[#blocks + 1] = para({ pandoc.Strong(pandoc.Str(string.upper(title))) }, "FrontCenter")
+    if ap_str("hari_tanggal") ~= "" then
+      blocks[#blocks + 1] = para({ pandoc.Str("Telah diuji dan disahkan pada:") }, "FrontCenter")
+      blocks[#blocks + 1] = para({ pandoc.Str(ap_str("hari_tanggal")) }, "FrontCenter")
+    end
+    if ap["supervisors"] ~= nil then
+      for _, s in ipairs(ap["supervisors"]) do
+        local role = pandoc.utils.stringify(s["role"] or "")
+        local name = pandoc.utils.stringify(s["name"] or "")
+        local nip = pandoc.utils.stringify(s["nip"] or "")
+        if role ~= "" then blocks[#blocks + 1] = para({ pandoc.Str(role) }, "FrontCenter") end
+        if name ~= "" then blocks[#blocks + 1] = para({ pandoc.Strong(pandoc.Str(name)) }, "FrontCenter") end
+        if nip ~= "" then blocks[#blocks + 1] = para({ pandoc.Str("NIP. " .. nip) }, "FrontCenter") end
+      end
+    end
+    blocks[#blocks + 1] = pagebreak()
+  end
+
+  -- === Ringkasan (Bahasa Indonesia) ===
+  if meta_str(meta, "abstract_id") ~= "" then
+    blocks[#blocks + 1] = para({ pandoc.Strong(pandoc.Str("RINGKASAN")) }, "FrontHeading")
+    blocks[#blocks + 1] = pandoc.Para({ pandoc.Str(pandoc.utils.stringify(meta["abstract_id"])) })
+    blocks[#blocks + 1] = pagebreak()
+  end
+
+  -- === Summary (Bahasa Inggris) ===
+  if meta_str(meta, "abstract_en") ~= "" then
+    blocks[#blocks + 1] = para({ pandoc.Strong(pandoc.Str("SUMMARY")) }, "FrontHeading")
+    blocks[#blocks + 1] = pandoc.Para({ pandoc.Emph(pandoc.Str(pandoc.utils.stringify(meta["abstract_en"]))) })
+    blocks[#blocks + 1] = pagebreak()
+  end
 
   meta.title = nil
   meta.subtitle = nil
@@ -443,6 +506,9 @@ function Pandoc(doc)
   meta.author = nil
   meta.abstract = nil
   meta["abstract-title"] = nil
+  meta["abstract_id"] = nil
+  meta["abstract_en"] = nil
+  meta["approval"] = nil
 
   local body = pandoc.List{}
   local inserted = false

@@ -177,25 +177,29 @@ echo ""
 # T16: Cek kualitas DOCX export
 echo "[T16] DOCX export check"
 if command -v unzip &>/dev/null; then
-  if ./build-docx.sh >/dev/null 2>&1 || (command -v make >/dev/null 2>&1 && make docx >/dev/null 2>&1); then
+  T16DIR="./tmp-t16-docx"
+  rm -rf "$T16DIR"
+  mkdir -p "$T16DIR/chapters"
+  cp chapters/*.md "$T16DIR/chapters/" 2>/dev/null || true
+  if ./build-docx.sh "$T16DIR" >/dev/null 2>&1; then
     pass "build-docx sukses"
-    if [ -f Laporan.docx ]; then
-      DOCXML=$(unzip -p Laporan.docx word/document.xml 2>/dev/null)
-      STYXML=$(unzip -p Laporan.docx word/styles.xml 2>/dev/null)
-      if echo "$DOCXML" | grep -q 'BAB I</w:t></w:r><w:r><w:br'; then
-        pass "docx penomoran BAB I dua baris"
+    if [ -f "$T16DIR/Laporan.docx" ]; then
+      DOCXML=$(unzip -p "$T16DIR/Laporan.docx" word/document.xml 2>/dev/null)
+      STYXML=$(unzip -p "$T16DIR/Laporan.docx" word/styles.xml 2>/dev/null)
+      if echo "$DOCXML" | grep -q 'BAB 1\.</w:t></w:r><w:r><w:br'; then
+        pass "docx penomoran BAB 1 dua baris"
       else
-        fail "docx BAB I bukan dua baris"
+        fail "docx BAB 1 bukan dua baris"
       fi
-      if echo "$DOCXML" | grep -q 'BAB I PENDAHULUAN'; then
-        pass "docx entri TOC BAB I PENDAHULUAN"
+      if echo "$DOCXML" | grep -q 'BAB 1\. PENDAHULUAN'; then
+        pass "docx entri TOC BAB 1 PENDAHULUAN"
       else
-        fail "docx tanpa entri TOC BAB I"
+        fail "docx tanpa entri TOC BAB 1"
       fi
-      if echo "$DOCXML" | grep -q 'KATA PENGANTAR' && ! echo "$DOCXML" | grep -q 'BAB I KATA PENGANTAR'; then
-        pass "KATA PENGANTAR tanpa nomor bab"
+      if echo "$DOCXML" | grep -q 'PRAKATA' && ! echo "$DOCXML" | grep -qE 'BAB 1\.? PRAKATA'; then
+        pass "PRAKATA tanpa nomor bab"
       else
-        fail "KATA PENGANTAR ke-numbering BAB I"
+        fail "PRAKATA ke-numbering BAB 1"
       fi
       if echo "$DOCXML" | grep -q 'w:hyperlink w:anchor'; then
         pass "docx daftar isi ber-hyperlink"
@@ -253,10 +257,10 @@ if command -v unzip &>/dev/null; then
       else
         fail "judul cover docx bukan 2 baris (br=$COVER_BR)"
       fi
-      if echo "$DOCXML" | grep -q 'w:anchor="kata-pengantar"'; then
-        pass "TOC memuat KATA PENGANTAR"
+      if echo "$DOCXML" | grep -q 'w:anchor="prakata"'; then
+        pass "TOC memuat PRAKATA"
       else
-        fail "TOC tanpa KATA PENGANTAR"
+        fail "TOC tanpa PRAKATA"
       fi
       PAGEREF_N=$(echo "$DOCXML" | grep -oE 'PAGEREF [a-z0-9-]+' | wc -l)
       ZERO_N=$(echo "$DOCXML" | grep -oE 'PAGEREF [a-z0-9-]+ [^<]*</w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>0</w:t>' | wc -l)
@@ -285,9 +289,9 @@ if command -v unzip &>/dev/null; then
         fail "front matter tanpa lowerRoman start 1"
       fi
       if echo "$DOCXML" | grep -q 'w:pgNumType w:fmt="decimal" w:start="1"'; then
-        pass "BAB I penomoran 1, 2, 3 (decimal)"
+        pass "BAB 1 penomoran 1, 2, 3 (decimal)"
       else
-        fail "BAB I tanpa decimal start 1"
+        fail "BAB 1 tanpa decimal start 1"
       fi
       H1BLK=$(echo "$STYXML" | sed -n '/w:styleId="Heading1"/,/<\/w:style>/p')
       H1B=$(echo "$H1BLK" | grep -oE 'w:before="360"' | wc -l)
@@ -301,11 +305,12 @@ if command -v unzip &>/dev/null; then
       fail "Laporan.docx tidak dihasilkan"
     fi
   else
-    fail "make docx gagal"
+    fail "build-docx.sh gagal (lihat output build-docx.sh tanpa redirect)"
   fi
 else
   pass "unzip tidak terinstall (skipped)"
 fi
+rm -rf "./tmp-t16-docx"
 echo ""
 
 echo "[T17] CLI Helper and Preset Guide check"
@@ -342,19 +347,19 @@ if [ -d "presets" ]; then
 else
   fail "Direktori presets/ tidak ditemukan"
 fi
-for p in standard.yml skripsi-4433.yml ui-skripsi.yml itb-ta.yml ugm-skripsi.yml its-skripsi.yml; do
+for p in unej-faperta.yml; do
   if [ -f "presets/$p" ]; then
     pass "Preset $p tersedia"
   else
     fail "Preset $p tidak ditemukan"
   fi
 done
-if ./laporan preset list | grep -q "itb-ta"; then
+if ./laporan preset list | grep -q "unej-faperta"; then
   pass "./laporan preset list menampilkan preset kampus"
 else
   fail "./laporan preset list gagal menampilkan preset kampus"
 fi
-if ./laporan preset show ui-skripsi | grep -q "Universitas Indonesia"; then
+if ./laporan preset show unej-faperta | grep -q "Jember"; then
   pass "./laporan preset show menampilkan konfigurasi preset"
 else
   fail "./laporan preset show gagal"
@@ -378,20 +383,20 @@ else
   fail "scripts/scan-preset.py bukan berkas executable"
 fi
 if [ -f "examples/mock-pedoman-unpad.txt" ]; then
-  python3 scripts/scan-preset.py examples/mock-pedoman-unpad.txt --preset-id test-scanner-unpad --output-dir /tmp/presets-test --non-interactive >/dev/null 2>&1
-  if [ -f "/tmp/presets-test/test-scanner-unpad.yml" ]; then
+  python3 scripts/scan-preset.py examples/mock-pedoman-unpad.txt --preset-id test-scanner-unpad --output-dir tmp-presets-test --non-interactive >/dev/null 2>&1
+  if [ -f "tmp-presets-test/test-scanner-unpad.yml" ]; then
     pass "scan-preset.py berhasil menghasilkan file preset YAML"
-    if grep -q 'margin_left: 4cm' /tmp/presets-test/test-scanner-unpad.yml && grep -q 'margin_top: 4cm' /tmp/presets-test/test-scanner-unpad.yml; then
+    if grep -q 'margin_left: 4cm' tmp-presets-test/test-scanner-unpad.yml && grep -q 'margin_top: 4cm' tmp-presets-test/test-scanner-unpad.yml; then
       pass "Scanner mengekstrak margin 4-4-3-3 dengan benar"
     else
       fail "Scanner salah mengekstrak margin"
     fi
-    if grep -q 'font_size: 12pt' /tmp/presets-test/test-scanner-unpad.yml; then
+    if grep -q 'font_size: 12pt' tmp-presets-test/test-scanner-unpad.yml; then
       pass "Scanner mengekstrak font size 12pt dengan benar"
     else
       fail "Scanner salah mengekstrak font size"
     fi
-    if grep -q 'UNIVERSITAS PADJADJARAN' /tmp/presets-test/test-scanner-unpad.yml; then
+    if grep -q 'UNIVERSITAS PADJADJARAN' tmp-presets-test/test-scanner-unpad.yml; then
       pass "Scanner mendeteksi nama institusi dengan benar"
     else
       fail "Scanner gagal mendeteksi institusi"
@@ -402,6 +407,7 @@ if [ -f "examples/mock-pedoman-unpad.txt" ]; then
 else
   fail "examples/mock-pedoman-unpad.txt tidak ditemukan untuk pengujian"
 fi
+rm -rf "tmp-presets-test"
 echo ""
 
 echo "[T20] Preset Linter, Validator & Diff CLI check"
@@ -420,7 +426,7 @@ if ./laporan preset validate >/dev/null 2>&1; then
 else
   fail "./laporan preset validate gagal"
 fi
-if ./laporan preset diff itb-ta ui-skripsi 2>&1 | grep -q "Perbandingan Preset: itb-ta  VS  ui-skripsi"; then
+if ./laporan preset diff unej-faperta unej-faperta 2>&1 | grep -q "Perbandingan Preset: unej-faperta  VS  unej-faperta"; then
   pass "./laporan preset diff menampilkan perbandingan antar preset"
 else
   fail "./laporan preset diff gagal menampilkan perbandingan"
@@ -464,16 +470,16 @@ fi
 echo ""
 
 echo "[T22] BAB I Spacing Fix, CLI Supercharged & Multi-Genre Protocol check"
-if pdftotext Laporan.pdf - 2>/dev/null | grep -q "BAB I PENDAHULUAN"; then
-  pass "Judul Bab I berjarak spasi sempurna ('BAB I PENDAHULUAN') di PDF"
+if pdftotext Laporan.pdf - 2>/dev/null | grep -q "BAB 1\. PENDAHULUAN"; then
+  pass "Judul Bab 1 berjarak spasi sempurna ('BAB 1. PENDAHULUAN') di PDF"
 else
-  fail "Judul Bab I tidak memiliki spasi yang tepat di PDF"
+  fail "Judul Bab 1 tidak memiliki spasi yang tepat di PDF"
 fi
 
-if ! pdftotext Laporan.pdf - 2>/dev/null | grep -q "BABI PENDAHULUAN"; then
-  pass "Bebas dari bug teks rapat 'BABI PENDAHULUAN'"
+if ! pdftotext Laporan.pdf - 2>/dev/null | grep -q "BAB1\. PENDAHULUAN"; then
+  pass "Bebas dari bug teks rapat 'BAB1. PENDAHULUAN'"
 else
-  fail "Terdeteksi bug teks rapat 'BABI PENDAHULUAN'"
+  fail "Terdeteksi bug teks rapat 'BAB1. PENDAHULUAN'"
 fi
 
 if ./laporan stats 2>&1 | grep -q "STATISTIK DOKUMEN"; then
@@ -500,7 +506,7 @@ else
   fail "laporan.ps1 belum mendukung perintah supercharged"
 fi
 
-if grep -q "PROTOKOL WAWANCARA INTERAKTIF" prompt.md && grep -q "Makalah / Paper Akademik" prompt.md; then
+if grep -q "TAHAP 1" prompt.md && grep -q "Proposal Usaha / Makalah Kuliah" prompt.md; then
   pass "prompt.md memuat protokol wawancara 3 tahap dan dukungan multi-karya ilmiah"
 else
   fail "prompt.md belum memuat protokol wawancara interaktif multi-genre"
@@ -550,7 +556,7 @@ else
   fail "package.json atau bin/laporan-generator.js tidak ditemukan"
 fi
 
-if [ -f ".agents/skills/laporan-generator/SKILL.md" ] && grep -q "Multi-Stage Interactive Protocol" .agents/skills/laporan-generator/SKILL.md; then
+if [ -f ".agents/skills/laporan-generator/SKILL.md" ] && grep -q "Protokol Interaktif (5 Tahap)" .agents/skills/laporan-generator/SKILL.md; then
   pass ".agents/skills/laporan-generator/SKILL.md valid dan memuat protokol AI"
 else
   fail "SKILL.md tidak valid atau tidak memuat protokol AI"

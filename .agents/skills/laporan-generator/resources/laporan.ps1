@@ -72,7 +72,7 @@ function Show-Help {
     Write-Host "  .\laporan.ps1 build"
     Write-Host "  .\laporan.ps1 stats"
     Write-Host "  .\laporan.ps1 preset list"
-    Write-Host "  .\laporan.ps1 preset apply itb-ta"
+    Write-Host "  .\laporan.ps1 preset apply unej-faperta"
 }
 
 function Cmd-Check {
@@ -166,7 +166,7 @@ function Cmd-Build-PDF {
     $pandocArgs += "--metadata=reference-section-title=DAFTAR PUSTAKA"
     $pandocArgs += "--top-level-division=chapter"
     $pandocArgs += "--pdf-engine=typst"
-    $pandocArgs += "--no-highlight"
+    $pandocArgs += "--syntax-highlighting=none"
     $pandocArgs += @("-o", "Laporan.pdf")
 
     & pandoc $pandocArgs
@@ -269,65 +269,81 @@ function Cmd-Init {
     Write-Host "Isi data di bawah ini (tekan Enter untuk memakai nilai default):"
     Write-Host ""
 
-    $in_title = Read-Host "Judul Laporan [LAPORAN PROYEK AKADEMIK]"
-    if (-not $in_title) { $in_title = "LAPORAN PROYEK AKADEMIK" }
+    $in_title = Read-Host "Judul Laporan [RESPON PERTUMBUHAN TANAMAN JAGUNG]"
+    if (-not $in_title) { $in_title = "RESPON PERTUMBUHAN TANAMAN JAGUNG" }
 
-    $in_subtitle = Read-Host "Subjudul [DOKUMENTASI DAN ANALISIS IMPLEMENTASI]"
-    if (-not $in_subtitle) { $in_subtitle = "DOKUMENTASI DAN ANALISIS IMPLEMENTASI" }
+    $in_subtitle = Read-Host "Subjudul [kosong]"
+    if (-not $in_subtitle) { $in_subtitle = "" }
 
-    $in_course = Read-Host "Mata Kuliah [Proyek Perangkat Lunak]"
-    if (-not $in_course) { $in_course = "Proyek Perangkat Lunak" }
+    $in_jenis = Read-Host "Jenis Karya [SKRIPSI]"
+    if (-not $in_jenis) { $in_jenis = "SKRIPSI" }
 
-    $in_lecturer = Read-Host "Dosen Pengampu [Dr. Nama Dosen, M.Kom.]"
-    if (-not $in_lecturer) { $in_lecturer = "Dr. Nama Dosen, M.Kom." }
+    $in_lecturer = Read-Host "Dosen Pembimbing [Ir. Nama Dosen Pembimbing, M.P.]"
+    if (-not $in_lecturer) { $in_lecturer = "Ir. Nama Dosen Pembimbing, M.P." }
 
     $in_author = Read-Host "Nama Penulis 1 [Nama Mahasiswa]"
     if (-not $in_author) { $in_author = "Nama Mahasiswa" }
 
-    $in_nim = Read-Host "NIM Penulis 1 [12345678]"
-    if (-not $in_nim) { $in_nim = "12345678" }
+    $in_nim = Read-Host "NIM Penulis 1 [251510501059]"
+    if (-not $in_nim) { $in_nim = "251510501059" }
 
-    $in_institution = Read-Host "Institusi/Universitas [UNIVERSITAS TEKNOLOGI]"
-    if (-not $in_institution) { $in_institution = "UNIVERSITAS TEKNOLOGI" }
+    $in_prodi = Read-Host "Program Studi [Program Studi Agroteknologi]"
+    if (-not $in_prodi) { $in_prodi = "Program Studi Agroteknologi" }
 
-    $in_faculty = Read-Host "Fakultas [FAKULTAS ILMU KOMPUTER]"
-    if (-not $in_faculty) { $in_faculty = "FAKULTAS ILMU KOMPUTER" }
+    $in_institution = Read-Host "Institusi/Universitas [Universitas Jember]"
+    if (-not $in_institution) { $in_institution = "Universitas Jember" }
 
-    $in_year = Read-Host "Tahun Akademik [2026/2027]"
-    if (-not $in_year) { $in_year = "2026/2027" }
+    $in_faculty = Read-Host "Fakultas [Fakultas Pertanian]"
+    if (-not $in_faculty) { $in_faculty = "Fakultas Pertanian" }
+
+    $in_year = Read-Host "Tahun [2026]"
+    if (-not $in_year) { $in_year = "2026" }
+
+    $in_mode = Read-Host "Mode dokumen [laporan/skripsi, default laporan]"
+    if (-not $in_mode) { $in_mode = "laporan" }
 
     Write-Host ""
     Write-Host "Pilihan Preset Format Kampus:" -ForegroundColor Blue
-    Write-Host "  standard / skripsi-4433 / ui-skripsi / itb-ta / ugm-skripsi / its-skripsi / unpad-skripsi"
-    $in_preset = Read-Host "Preset Format [standard]"
-    if (-not $in_preset) { $in_preset = "standard" }
+    Write-Host "  unej-faperta"
+    $in_preset = Read-Host "Preset Format [unej-faperta]"
+    if (-not $in_preset) { $in_preset = "unej-faperta" }
 
     $curDate = (Get-Date -Format "MMMM yyyy")
 
     $escTitle = Escape-Yaml $in_title
     $escSubtitle = Escape-Yaml $in_subtitle
-    $escCourse = Escape-Yaml $in_course
+    $escJenis = Escape-Yaml $in_jenis
+    $escMode = Escape-Yaml $in_mode
     $escLecturer = Escape-Yaml $in_lecturer
     $escAuthor = Escape-Yaml $in_author
     $escNim = Escape-Yaml $in_nim
+    $escProdi = Escape-Yaml $in_prodi
     $escInstitution = Escape-Yaml $in_institution
     $escFaculty = Escape-Yaml $in_faculty
     $escYear = Escape-Yaml $in_year
     $escPreset = Escape-Yaml $in_preset
 
     $yamlContent = @"
+---
 title: "$escTitle"
 subtitle: "$escSubtitle"
-course: "$escCourse"
-lecturer: "$escLecturer"
+jenis_karya: "$escJenis"
+mode: "$escMode"
 author:
   - name: "$escAuthor"
     nim: "$escNim"
-institution: "$escInstitution"
+lecturer: "$escLecturer"
+lecturer_label: "Dosen Pembimbing:"
+course: ""
+program_studi: "$escProdi"
 faculty: "$escFaculty"
+institution: "$escInstitution"
 year: "$escYear"
 date: "$curDate"
 preset: "$escPreset"
+daftar_gambar: false
+daftar_tabel: false
+daftar_lampiran: false
 "@
 
     Set-Content -Path "metadata.yml" -Value $yamlContent
@@ -380,7 +396,7 @@ function Cmd-Preset {
             }
         }
         "show" {
-            if (-not $P1) { Write-Host "Error: Sebutkan ID preset. Contoh: .\laporan.ps1 preset show itb-ta" -ForegroundColor Red; return }
+            if (-not $P1) { Write-Host "Error: Sebutkan ID preset. Contoh: .\laporan.ps1 preset show unej-faperta" -ForegroundColor Red; return }
             $file = "presets\$P1.yml"
             if (Test-Path $file) {
                 Show-Banner
@@ -393,7 +409,7 @@ function Cmd-Preset {
             }
         }
         "apply" {
-            if (-not $P1) { Write-Host "Error: Sebutkan ID preset. Contoh: .\laporan.ps1 preset apply itb-ta" -ForegroundColor Red; return }
+            if (-not $P1) { Write-Host "Error: Sebutkan ID preset. Contoh: .\laporan.ps1 preset apply unej-faperta" -ForegroundColor Red; return }
             $file = "presets\$P1.yml"
             if (-not (Test-Path $file)) { Write-Host "Preset '$P1' tidak ditemukan." -ForegroundColor Red; return }
             if (-not (Test-Path "metadata.yml")) { Write-Host "metadata.yml tidak ditemukan." -ForegroundColor Red; return }
@@ -426,7 +442,7 @@ function Cmd-Preset {
                 if (-not (Test-Path $f2)) { Write-Host "Preset '$P2' tidak ditemukan." -ForegroundColor Red; return }
                 Compare-Object (Get-Content $f1) (Get-Content $f2)
             } else {
-                $curr = "standard"
+                $curr = "unej-faperta"
                 if (Test-Path "metadata.yml") {
                     $content = Get-Content "metadata.yml" -Raw
                     if ($content -match "(?:preset|margin_preset)\s*:\s*[`"']?([a-zA-Z0-9_-]+)[`"']?") {

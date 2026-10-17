@@ -1,6 +1,8 @@
-# Panduan Memulai: Zero to PDF (Laporan Generator)
+# Panduan Memulai: Zero to PDF (Laporan Generator FAPERTA UNEJ)
 
-Selamat datang! Dokumen ini dirancang khusus untuk membantu Anda--baik pemula yang belum pernah mengetik kode maupun pengguna berpengalaman--untuk menghasilkan laporan akademik PDF berstandar profesional dalam waktu singkat.
+Selamat datang! Dokumen ini membantu Anda -- baik pemula maupun berpengalaman --
+menghasilkan karya tulis ilmiah S1 berstandar **PPKI FAPERTA Universitas Jember**
+dalam bentuk PDF dan Microsoft Word dalam waktu singkat.
 
 ---
 
@@ -8,34 +10,24 @@ Selamat datang! Dokumen ini dirancang khusus untuk membantu Anda--baik pemula ya
 
 | Jalur | Persyaratan | Cocok Untuk |
 |---|---|---|
-| **[1. Opsi AI Agent](#1-opsi-ai-agent-paling-cepat--otomatis)** | AI Agent (OpenCode, Claude Code, Antigravity) | Pemula yang ingin laporan dibuatkan otomatis dari project |
-| **[2. Opsi Docker](#2-opsi-docker-tanpa-install-tools-lokal)** | Docker Desktop | Pengguna yang tidak mau install Pandoc/Typst di komputer |
-| **[3. Opsi Manual (CLI)](#3-opsi-manual-cli-kompilasi-lokal)** | Pandoc + Typst + ImageMagick | Pengguna Linux/Mac yang sudah biasa dengan CLI |
+| **[1. Opsi AI Agent](#1-opsi-ai-agent-paling-cepat--otomatis)** | AI Agent (OpenCode, Claude Code, Antigravity) | Pemula yang ingin laporan dibuatkan otomatis |
+| **[2. Opsi Docker](#2-opsi-docker-tanpa-install-tools-lokal)** | Docker Desktop | Pengguna yang tidak mau install Pandoc/Typst lokal |
+| **[3. Opsi Manual (CLI)](#3-opsi-manual-cli-kompilasi-lokal)** | Pandoc + Typst + ImageMagick | Pengguna Linux/Mac/Windows yang biasa dengan CLI |
 
 ---
 
 ## 1. Opsi AI Agent (Paling Cepat & Otomatis)
 
-Jika Anda sudah memiliki folder project (misal: Web, Mobile App, Machine Learning, IoT, Game) dan ingin AI menulis isi laporan untuk Anda:
-
 ```bash
-# 1. Clone repositori ini ke direktori project Anda
-git clone https://github.com/muadzhdz/laporan-generator.git project-kamu
-cd project-kamu/
-
-# 2. Ganti logo.jpg dengan logo kampus/sekolah Anda
-# (Nama file HARUS tetap logo.jpg)
-
-# 3. Jalankan AI Agent pilihan Anda di terminal, lalu instruksikan:
-"Baca prompt.md dan bantu saya membuat laporan untuk project ini"
-
-# 4. AI akan membaca struktur project Anda dan bertanya secara interaktif.
-# Cukup jawab pertanyaan AI satu per satu.
-
-# 5. Setelah AI selesai, jalankan kompilasi PDF:
-docker compose run --rm laporan-generator
-# atau jika punya Pandoc/Typst lokal:
-./build.sh
+# 1. Buka AI Agent (OpenCode, Claude Code, Antigravity) di folder project ini
+# 2. Instruksikan:
+"Baca prompt.md dan bantu saya menyusun skripsi/laporan FAPERTA UNEJ"
+# 3. Jawab pertanyaan wawancara AI (jenis karya, mode, metadata)
+# 4. AI menyusun chapters/*.md, metadata.yml, references.bib
+# 5. Kompilasi:
+.\laporan.ps1 build     # Windows
+# atau
+./laporan build         # Linux/macOS
 ```
 
 ---
@@ -118,31 +110,34 @@ make view
 
 ## Glosarium Istilah Teknis
 
-* **Pandoc**: Program pengubah format dokumen (mengonversi Markdown menjadi Typst/PDF/Word/HTML).
-* **Typst**: Engine typesetting dokumen modern, cepat, dan ringan berbasis bahasa penataan letak yang intuitif.
-* **BibTeX**: Format standar untuk menyimpan data referensi/daftar pustaka akademik (`references.bib`).
-* **CSL (Citation Style Language)**: Berkas aturan penulisan sitasi (pada project ini menggunakan standar APA Style `apa.csl`).
-* **PAGEREF DOCX**: Mekanisme penomoran halaman otomatis pada Daftar Isi dokumen Microsoft Word.
+* **Pandoc**: Program pengubah format dokumen (Markdown → Typst/PDF/Word).
+* **Typst**: Engine typesetting dokumen modern, cepat, dan ringan.
+* **BibTeX**: Format standar penyimpanan referensi akademik (`references.bib`).
+* **CSL (Citation Style Language)**: Berkas aturan sitasi (proyek ini memakai **APA 6th edition**).
+* **PAGEREF DOCX**: Mekanisme penomoran halaman otomatis pada Daftar Isi Word.
 
 ---
 
 ## FAQ & Troubleshooting Singkat
 
-* **Q: Mengapa penomoran bab saya menjadi ganda seperti "BAB I: BAB 1"?**  
-  *A:* Di file Markdown `chapters/bab*.md`, gunakan heading `# Judul Bab` tanpa menyertakan kata "BAB 1". Template Typst akan menambahkan kata "BAB I" secara otomatis.
+* **Q: Mengapa penomoran bab menjadi ganda seperti "BAB 1. BAB 1"?**
+  *A:* Di `chapters/bab*.md`, gunakan heading `# Judul Bab` tanpa "BAB 1." —
+  template menambahkan nomor bab otomatis.
 
-* **Q: Bagaimana cara menambahkan gambar/screenshot?**  
-  *A:* Simpan file gambar di folder `gambar/` lalu panggil di Markdown menggunakan sintaks `![](gambar/nama-file.png)`.
+* **Q: Bagaimana cara menambahkan gambar?**
+  *A:* Simpan di folder `gambar/` lalu panggil `![](gambar/nama-file.png)`.
 
-* **Q: Bagaimana format sitasi yang benar?**  
-  *A:* Masukkan entri BibTeX di `references.bib`, lalu panggil di Markdown menggunakan sintaks `[@citekey]`.
+* **Q: Bagaimana format sitasi yang benar?**
+  *A:* Masukkan entri BibTeX di `references.bib`, lalu panggil `[@citekey]`.
+  Gaya sitasi mengikuti APA 6th edition.
 
-* **Q: Bagaimana cara menyesuaikan format dengan kampus saya?**  
-  *A:* Gunakan `./laporan preset list` untuk memilih preset kampus bawaan (UI, ITB, UGM, ITS, UNPAD), atau pindai buku pedoman PDF kampus Anda dengan `./laporan preset scan /path/ke/pedoman.pdf`.
+* **Q: Bagaimana jika pedoman FAPERTA berubah?**
+  *A:* Sesuaikan parameter di `presets/unej-faperta.yml` (margin, spasi, format
+  heading) lalu validasi dengan `./laporan preset validate unej-faperta`.
 
 ---
 
-Untuk panduan lebih mendalam mengenai skema metadata, preset kampus, dan arsitektur template, silakan baca dokumentasi di folder `docs/`:
+Untuk panduan lebih mendalam, silakan baca dokumentasi di folder `docs/`:
 - [docs/campus-guide.md](docs/campus-guide.md)
 - [docs/preset-schema.md](docs/preset-schema.md)
 - [docs/metadata-schema.md](docs/metadata-schema.md)

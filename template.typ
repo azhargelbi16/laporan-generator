@@ -1,8 +1,16 @@
+// ============================================================================
+// template.typ — Template Typst untuk Laporan Akademik S1 FAPERTA UNEJ
+// Mengacu pada Pedoman Penulisan Karya Tulis Ilmiah (PPKI) FAPERTA UNEJ.
+// Layout: A4, margin 4-3-4-3 cm, Times New Roman 12pt, spasi 1.5,
+// heading "BAB 1. JUDUL" (arabic) / "1.1. Judul" / "1.1.1 Judul" (non-bold).
+// ============================================================================
+
 #set document(
   title: "$title$",
   author: ($for(author)$"$author.name$"$sep$,$endfor$),
 )
 
+// --- Margin: dibaca langsung dari preset (fix: tidak lagi hardcode margin_preset)
 $if(margin_top)$
 #let doc-margin = (
   top: $margin_top$,
@@ -11,32 +19,59 @@ $if(margin_top)$
   right: $margin_right$,
 )
 $else$
-#let doc-margin = if "$margin_preset$" == "skripsi-4433" or "$margin_preset$" == "4-4-3-3" {
-  (top: 4cm, bottom: 3cm, left: 4cm, right: 3cm)
-} else {
-  (top: 2cm, bottom: 3cm, left: 2.5cm, right: 2.5cm)
-}
+#let doc-margin = (
+  top: 4cm,
+  bottom: 3cm,
+  left: 4cm,
+  right: 3cm,
+)
 $endif$
 
+#let front-position = "$if(page_number_front_position)$$page_number_front_position$$else$bottom-center$endif$"
+#let body-position = "$if(page_number_body_position)$$page_number_body_position$$else$top-right$endif$"
+
+#let position-to-align = (pos) => {
+  if pos == "bottom-center" or pos == "top-center" {
+    center
+  } else if pos == "top-right" {
+    right
+  } else if pos == "top-left" {
+    left
+  } else {
+    right
+  }
+}
+
+// --- Pengaturan halaman dasar: front matter Romawi kecil, bawah tengah.
+// Bagian utama (Arab, kanan atas) di-set pada aturan heading level 1.
 #set page(
   paper: "a4",
   margin: doc-margin,
-  numbering: none,
+  numbering: "i",
+  number-align: bottom + center,
 )
 
 $if(font_family)$
-#set text(font: "$font_family$", size: $if(font_size)$$font_size$$else$12pt$endif$)
+#let base-font = "$font_family$"
 $else$
-#set text(font: "Libertinus Serif", size: 12pt)
+#let base-font = "Times New Roman"
+$endif$
+$if(font_fallback)$
+#let fallback-font = "$font_fallback$"
+#set text(font: (base-font, fallback-font), size: $if(font_size)$$font_size$$else$12pt$endif$)
+$else$
+#set text(font: base-font, size: $if(font_size)$$font_size$$else$12pt$endif$)
 $endif$
 
-$if(line_spacing)$
-#set par(justify: true, leading: $line_spacing$, first-line-indent: $if(first_line_indent)$$first_line_indent$$else$1.25cm$endif$)
-$else$
-#set par(justify: true, leading: 0.75em, first-line-indent: 1.25cm)
-$endif$
-#show bibliography: set par(hanging-indent: $if(first_line_indent)$$first_line_indent$$else$1.25cm$endif$, first-line-indent: 0cm)
+// --- Spasi baris 1.5 (Typst: leading dalam em mengikuti font size)
+#set par(
+  justify: true,
+  leading: 0.9em,
+  first-line-indent: $if(first_line_indent)$$first_line_indent$$else$1cm$endif$,
+)
+#show bibliography: set par(hanging-indent: $if(first_line_indent)$$first_line_indent$$else$1cm$endif$, first-line-indent: 0cm)
 
+// --- Konfigurasi penomoran bab dari preset
 #let raw-prefix = "$if(heading_chapter_prefix)$$heading_chapter_prefix$$else$BAB $endif$"
 #let chapter-prefix = if raw-prefix == "" {
   ""
@@ -45,29 +80,37 @@ $endif$
 } else {
   raw-prefix + " "
 }
-#let chapter-fmt = "$if(heading_chapter_num_format)$$heading_chapter_num_format$$else$roman$endif$"
+#let chapter-fmt = "$if(heading_chapter_num_format)$$heading_chapter_num_format$$else$arabic$endif$"
+#let chapter-dot = "$if(heading_chapter_dot)$$heading_chapter_dot$$else$true$endif$" == "true"
+#let sub-dot = "$if(heading_sub_dot)$$heading_sub_dot$$else$true$endif$" == "true"
+#let subsub-dot = "$if(heading_subsub_dot)$$heading_subsub_dot$$else$false$endif$" == "true"
+#let subsub-bold = "$if(heading_subsub_bold)$$heading_subsub_bold$$else$false$endif$" == "true"
+
 #let format-chapter-num(n) = {
-  if chapter-fmt == "arabic" {
-    numbering("1", n)
-  } else {
+  if chapter-fmt == "roman" {
     numbering("I", n)
+  } else {
+    numbering("1", n)
   }
 }
 
+// --- Format penomoran heading berjenjang
 #set heading(numbering: (..ns) => {
   if ns.len() == 1 {
-    if chapter-prefix != "" {
+    let base = if chapter-prefix != "" {
       chapter-prefix + format-chapter-num(ns.at(0))
     } else {
       format-chapter-num(ns.at(0))
     }
+    if chapter-dot { base + "." } else { base }
   } else if ns.len() == 2 {
-    numbering("$if(heading_sub_dot)$1.1.$else$1.1$endif$", ..ns)
+    numbering("1.1" + if sub-dot { "." } else { "" }, ..ns)
   } else {
-    numbering("$if(heading_subsub_dot)$1.1.1.$else$1.1.1$endif$", ..ns)
+    numbering("1.1.1" + if subsub-dot { "." } else { "" }, ..ns)
   }
 })
 
+// --- Penomoran ilustrasi mengikat nomor bab (Gambar 1.1, Tabel 2.3)
 #show figure.where(kind: image): set figure(
   supplement: [Gambar],
   numbering: it => {
@@ -75,7 +118,6 @@ $endif$
     str(ch) + "." + str(it)
   }
 )
-
 #show figure.where(kind: table): set figure(
   supplement: [Tabel],
   numbering: it => {
@@ -83,7 +125,6 @@ $endif$
     str(ch) + "." + str(it)
   }
 )
-
 #show figure.where(kind: raw): set figure(
   supplement: [Listing],
   numbering: it => {
@@ -91,25 +132,30 @@ $endif$
     str(ch) + "." + str(it)
   }
 )
-
 #set math.equation(numbering: it => "(" + str(counter(heading).get().at(0, default: 1)) + "." + str(it) + ")")
 
+// --- Heading level 1: halaman baru, kapital bold, tengah, reset counter
 #show heading.where(level: 1): it => {
   counter(figure.where(kind: image)).update(0)
   counter(figure.where(kind: table)).update(0)
   counter(figure.where(kind: raw)).update(0)
   counter(math.equation).update(0)
   pagebreak(weak: true)
+
   align(center)[
     #block(inset: (top: 0.5em, bottom: 1.8em))[
-      #text(size: 14pt, weight: "bold")[
+      #text(size: 12pt, weight: "bold")[
         #if it.numbering != none [
-          #if chapter-prefix != "" [
-            #(chapter-prefix + format-chapter-num(counter(heading).get().at(0)))
-            #linebreak()
-          ] else [
-            #(format-chapter-num(counter(heading).get().at(0)) + ". ")
-          ]
+          #context {
+            let n = counter(heading).get().at(0)
+            let base = if chapter-prefix != "" {
+              chapter-prefix + format-chapter-num(n)
+            } else {
+              format-chapter-num(n)
+            }
+            if chapter-dot { base + "." } else { base }
+            linebreak()
+          }
           #if it.body.has("text") [
             #upper(it.body.text)
           ] else [
@@ -123,18 +169,18 @@ $endif$
   ]
 }
 
+// --- Heading level 2: subbab, kiri, bold, Title Case (nomor + titik)
 #show heading.where(level: 2): it => {
-  block(above: 1.0em, below: 0.5em)[
+  block(above: 1.2em, below: 0.6em)[
     #text(size: 12pt, weight: "bold")[#it]
   ]
-  par(leading: 0.75em)[]
 }
 
+// --- Heading level 3: subsubbab, kiri, non-bold (default), Title Case
 #show heading.where(level: 3): it => {
-  block(above: 0.8em, below: 0.4em)[
-    #text(size: 12pt, weight: "bold")[#it]
+  block(above: 1.0em, below: 0.5em)[
+    #text(size: 12pt, weight: if subsub-bold { "bold" } else { "regular" })[#it]
   ]
-  par(leading: 0.75em)[]
 }
 
 #show figure: it => it + par[]
@@ -169,8 +215,8 @@ $endif$
 }
 
 #show outline.entry.where(level: 1): set text(weight: "bold")
-#set par(leading: 0.75em)
 
+// --- Pemisah judul menjadi baris seimbang (segitiga terbalik)
 #let balance-split(title, k) = {
   let words = title.split(" ")
   let n = words.len()
@@ -243,6 +289,9 @@ $endif$
 #set figure.caption(position: bottom)
 #show raw.where(block: true): set text(font: "DejaVu Sans Mono", size: 9pt)
 
+// ============================================================================
+// HALAMAN SAMPUL
+// ============================================================================
 #v(1cm)
 #align(center)[
   #text(size: 14pt, weight: "bold")[#title-lines]
@@ -253,10 +302,16 @@ $if(subtitle)$
   #text(size: 14pt, weight: "bold")[#upper("$subtitle$".replace("\n", " "))]
 ]
 $endif$
-$if(course)$
+$if(jenis_karya)$
 #v(0.8cm)
 #align(center)[
-  #text(size: 12pt, weight: "bold")[$course$]
+  #text(size: 12pt, weight: "bold")[#upper("$jenis_karya$")]
+]
+$endif$
+$if(course)$
+#v(0.5cm)
+#align(center)[
+  #text(size: 12pt)[#emph("$course$")]
 ]
 $endif$
 $if(lecturer)$
@@ -265,6 +320,7 @@ $if(lecturer)$
   #v(0.4cm)
   #align(center)[
     #text(size: 11pt)[$if(lecturer_label)$$lecturer_label$$else$Dosen Pengampu:$endif$]
+    #linebreak()
     #text(size: 12pt, weight: "bold")[$lecturer$]
   ]
 ]
@@ -272,7 +328,7 @@ $endif$
 
 #v(1fr)
 #align(center)[
-  #image("logo.jpg", width: $if(cover_logo_width)$$cover_logo_width$$else$4cm$endif$)
+  #image("logo.jpg", width: $if(cover_logo_width)$$cover_logo_width$$else$3cm$endif$)
 ]
 #v(1fr)
 
@@ -289,18 +345,24 @@ $endfor$
 
 #v(1fr)
 #align(center)[
-  #text(size: 14pt, weight: "bold")[#upper("$faculty$".replace("\n", " "))]
+  #text(size: 12pt, weight: "bold")[#upper("$program_studi$".replace("\n", " "))]
   #linebreak()
-  #text(size: 14pt, weight: "bold")[#upper("$institution$".replace("\n", " "))]
+  #text(size: 12pt, weight: "bold")[#upper("$faculty$".replace("\n", " "))]
   #linebreak()
-  #text(size: 14pt, weight: "bold")[#upper("$year$".replace("\n", " "))]
+  #text(size: 12pt, weight: "bold")[#upper("$institution$".replace("\n", " "))]
+  #linebreak()
+  #text(size: 12pt, weight: "bold")[$year$]
 ]
 #v(1cm)
 
+// ============================================================================
+// BAGIAN AWAL (FRONT MATTER) — Romawi kecil, bawah tengah
+// ============================================================================
 #pagebreak()
-#set page(numbering: "i")
+#set page(numbering: "i", number-align: bottom + center)
 #counter(page).update(1)
 
+// --- Lembar Pengesahan
 $if(approval)$
 #align(center)[
   #text(size: 14pt, weight: "bold")[LEMBAR PENGESAHAN]
@@ -314,11 +376,13 @@ $if(approval)$
   #text(size: 11pt, weight: "bold")[$author.name$] #text(size: 11pt)[($author.nim$)] \
   $endfor$
 ]
-#v(0.5cm)
+$if(approval.hari_tanggal)$
+#v(0.3cm)
 #align(center)[
-  #text(size: 11pt)[Telah diperiksa dan disetujui untuk diujikan pada:] \
-  #text(size: 11pt)[$if(approval.city)$$approval.city$, $endif$$if(approval.date)$$approval.date$$else$$date$$endif$]
+  #text(size: 11pt)[Telah diuji dan disahkan pada:] \
+  #text(size: 11pt)[$approval.hari_tanggal$]
 ]
+$endif$
 #v(1cm)
 #grid(
   columns: (1fr, 1fr),
@@ -335,7 +399,7 @@ $if(approval)$
 $if(approval.dean)$
 #v(1cm)
 #align(center)[
-  #text(size: 10.5pt)[Mengetahui,] \
+  #text(size: 10.5pt)[Mengesahkan] \
   #text(size: 10.5pt)[$approval.dean.role$] \
   #v(2cm)
   #text(size: 10.5pt, weight: "bold")[$approval.dean.name$] \
@@ -345,16 +409,17 @@ $endif$
 #pagebreak()
 $endif$
 
+// --- Ringkasan (Bahasa Indonesia)
 $if(abstract_id)$
 #align(center)[
-  #text(size: 14pt, weight: "bold")[ABSTRAK]
+  #text(size: 14pt, weight: "bold")[RINGKASAN]
 ]
 #v(0.5cm)
 #align(center)[
   #text(size: 11pt, weight: "bold")[#title-lines]
 ]
 #v(0.5cm)
-#set par(justify: true, leading: 0.65em, first-line-indent: 1cm)
+#set par(justify: true, leading: 0.9em, first-line-indent: 1cm)
 #text(size: 11pt)[
   $abstract_id$
 ]
@@ -368,16 +433,17 @@ $endif$
 #pagebreak()
 $endif$
 
+// --- Summary (Bahasa Inggris)
 $if(abstract_en)$
 #align(center)[
-  #text(size: 14pt, weight: "bold")[ABSTRACT]
+  #text(size: 14pt, weight: "bold")[SUMMARY]
 ]
 #v(0.5cm)
 #align(center)[
   #text(size: 11pt, weight: "bold", style: "italic")[#title-lines]
 ]
 #v(0.5cm)
-#set par(justify: true, leading: 0.65em, first-line-indent: 1cm)
+#set par(justify: true, leading: 0.9em, first-line-indent: 1cm)
 #text(size: 11pt, style: "italic")[
   $abstract_en$
 ]

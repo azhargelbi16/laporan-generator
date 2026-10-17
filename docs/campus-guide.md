@@ -1,120 +1,66 @@
-# Panduan Preset & Kustomisasi Format Kampus
+# Panduan Format Penulisan FAPERTA Universitas Jember
 
-Dokumen ini berisi panduan untuk menyesuaikan format laporan akademik sesuai dengan pedoman penulisan di berbagai perguruan tinggi di Indonesia menggunakan sistem **Preset Declarative** (`presets/*.yml`).
+Dokumen ini merangkum aturan format karya tulis ilmiah tingkat **S1** di
+Fakultas Pertanian Universitas Jember berdasarkan Buku Pedoman Penulisan Karya
+Tulis Ilmiah (PPKI) FAPERTA UNEJ (SK Dekan No. 5705/UN25.1.3/KP.8/2021).
+
+Proyek ini hanya menyediakan satu preset: **`unej-faperta`**.
 
 ---
 
-## 1. Menggunakan Preset Kampus
+## 1. Mengaktifkan Preset
 
-Setiap perguruan tinggi memiliki aturan tata letak, margin, jenis huruf, dan gaya sampul tersendiri. Anda dapat memilih preset yang diinginkan melalui berkas `metadata.yml`:
-
+Pada `metadata.yml`:
 ```yaml
-preset: "itb-ta"   # Ganti dengan ID preset kampus Anda
+preset: "unej-faperta"
 ```
 
-Atau gunakan bantuan CLI interaktif:
+Atau via CLI:
 ```bash
-./laporan preset list                # Lihat semua preset yang tersedia
-./laporan preset show ui-skripsi      # Lihat rincian konfigurasi preset
-./laporan preset apply itb-ta        # Terapkan langsung ke metadata.yml
-```
-
-> **Kompatibilitas**: Field lama `margin_preset: "skripsi-4433"` atau `margin_preset: "standard"` tetap didukung penuh.
-
----
-
-## 2. Daftar Preset Kampus Bawaan
-
-| ID Preset | Institusi / Format | Margin (Atas - Bawah - Kiri - Kanan) | Catatan Khusus |
-|---|---|---|---|
-| `standard` | Standar Modern | 2.0 cm - 3.0 cm - 2.5 cm - 2.5 cm | Format default tugas akhir, magang, praktikum |
-| `skripsi-4433` | Skripsi Tradisional | 4.0 cm - 3.0 cm - 4.0 cm - 3.0 cm | Hardcover jilid tebal margin kiri 4cm |
-| `ui-skripsi` | Universitas Indonesia (UI) | 2.5 cm - 2.5 cm - 2.5 cm - 2.5 cm | Sesuai Pedoman Karya Ilmiah UI |
-| `itb-ta` | Institut Teknologi Bandung (ITB) | 4.0 cm - 3.0 cm - 4.0 cm - 3.0 cm | Cover minimalis (tanpa dosen pembimbing di cover luar) |
-| `ugm-skripsi` | Universitas Gadjah Mada (UGM) | 4.0 cm - 3.0 cm - 4.0 cm - 3.0 cm | Full academic cover |
-| `its-skripsi` | Institut Teknologi Sepuluh Nopember (ITS) | 4.0 cm - 3.0 cm - 4.0 cm - 3.0 cm | Standard Tugas Akhir & Tesis ITS |
-
----
-
-## 3. Contoh Konfigurasi Berbagai Kampus
-
-### A. Format Universitas Indonesia (UI)
-```yaml
-title: "IMPLEMENTASI DEEP LEARNING UNTUK DETEKSI PENYAKIT PADA CITRA MEDIS"
-subtitle: "LAPORAN TUGAS AKHIR"
-course: "Proyek Perangkat Lunak Lanjut"
-lecturer: "Prof. Dr. Ir. Dosen Pengampu, M.Sc."
-author:
-  - name: "Nama Mahasiswa"
-    nim: "2106012345"
-institution: "UNIVERSITAS INDONESIA"
-faculty: "FAKULTAS ILMU KOMPUTER"
-year: "2026"
-preset: "ui-skripsi"
-```
-
-### B. Format Institut Teknologi Bandung (ITB)
-```yaml
-title: "RANCANG BANGUN SISTEM KONTROL DAN MONITORING SMART GRID BERBASIS IOT"
-subtitle: "LAPORAN TUGAS AKHIR"
-course: "Sistem Tertanam"
-author:
-  - name: "Nama Mahasiswa"
-    nim: "13521001"
-institution: "INSTITUT TEKNOLOGI BANDUNG"
-faculty: "SEKOLAH TEKNIK ELEKTRO DAN INFORMATIKA"
-year: "2026"
-preset: "itb-ta"
-```
-
-### C. Format Universitas Gadjah Mada (UGM)
-```yaml
-title: "ANALISIS PERFORMA ARSITEKTUR MICROSERVICES PADA CLOUD COMPUTING"
-subtitle: "LAPORAN PRAKTIKUM LAPANGAN"
-course: "Rekayasa Perangkat Lunak"
-lecturer: "Dr. Dosen Pengampu, S.Kom., M.Cs."
-author:
-  - name: "Mahasiswa Satu"
-    nim: "21/475123/TK/52123"
-  - name: "Mahasiswa Dua"
-    nim: "21/475124/TK/52124"
-institution: "UNIVERSITAS GADJAH MADA"
-faculty: "FAKULTAS TEKNIK"
-year: "2026"
-preset: "ugm-skripsi"
+./laporan preset show unej-faperta
+./laporan preset apply unej-faperta
 ```
 
 ---
 
-## 4. Mengganti Logo Kampus
-Cukup salin gambar logo resmi kampus Anda ke direktori utama dengan nama **`logo.jpg`** (atau format PNG yang dikonversi ke JPEG):
-```bash
-cp /path/ke/logo-kampus.png logo.jpg
-```
-Pipeline akan secara otomatis menyesuaikan ukuran dan memposisikannya secara proporsional di tengah halaman sampul sesuai konfigurasi `cover_logo_width` pada preset.
+## 2. Ringkasan Aturan Format
+
+| Aspek | Ketentuan |
+|---|---|
+| Kertas | A4 (21 × 29,7 cm), 80 gram |
+| Margin | Atas 4 cm, Bawah 3 cm, Kiri 4 cm, Kanan 3 cm |
+| Font | Times New Roman 12 pt (judul sampul 14 pt) |
+| Indentasi | 1 cm dari pias kiri |
+| Spasi baris | 1,5 |
+| Judul bab | `BAB 1. JUDUL` (Arab + titik, default) / `BAB I JUDUL` (opsi Roman) |
+| Subbab | `1.1. Judul Subbab` (tebal) |
+| Subsubbab | `1.1.1 Judul Subsubbab` (tidak tebal) |
+| Nomor halaman | Romawi kecil tengah-bawah (awal); Arab kanan-atas (utama) |
+| Sitasi | APA 6th edition |
 
 ---
 
-## 5. Memindai Otomatis Pedoman Kampus Baru (PDF Scanner)
+## 3. Mode Dokumen
 
-Jika kampus Anda belum tersedia di daftar preset bawaan, Anda dapat memindai berkas PDF Buku Pedoman Penulisan Skripsi / Tugas Akhir kampus Anda secara otomatis:
+Preset `unej-faperta` dipakai untuk semua jenis dokumen S1. Perbedaan struktur
+diatur melalui field `mode` pada `metadata.yml`:
 
-```bash
-./laporan preset scan /path/ke/pedoman-penulisan-kampus.pdf
-```
-
-Sistem pemindai cerdas akan:
-1. Mengekstraksi teks dokumen dan mencari pasal format fisik/tata cara pengetikan.
-2. Mendeteksi margin (kiri, atas, kanan, bawah), jenis dan ukuran font, spasi baris, format penomoran bab/sub-bab, dan nama institusi.
-3. Menampilkan ringkasan temuan aturan format di terminal.
-4. Menyimpan konfigurasi otomatis ke berkas `presets/<preset-id>.yml`.
-
-Contoh pemindaian dengan opsi khusus:
-```bash
-./laporan preset scan pedoman-unpad.pdf --preset-id unpad-skripsi --name "Universitas Padjadjaran" --apply
-```
+| Mode | Front Matter |
+|---|---|
+| `skripsi` | Sampul, Lembar Pengesahan, Ringkasan, Summary, Prakata, Daftar Isi/Tabel/Gambar |
+| `laporan` | Sampul, Prakata/Kata Pengantar, Daftar Isi (+ Daftar Gambar/Tabel bila ada) |
 
 ---
 
-## 6. Membuat Preset Kustom Secara Manual
-Selain pemindaian otomatis, Anda juga dapat menulis berkas preset YAML baru secara manual di direktori `presets/`. Baca panduan lengkapnya di [docs/preset-schema.md](preset-schema.md).
+## 4. Mengganti Logo
+
+Salin logo resmi (mis. lambang Universitas Jember, 3 × 3 cm) ke direktori utama
+dengan nama **`logo.jpg`**. Ukuran di sampul diatur melalui `cover_logo_width`
+(default `3cm`).
+
+---
+
+## 5. Catatan
+
+Aturan untuk jenjang Magister (Tesis) dan Doktor (Disertasi) tidak disertakan
+dalam preset ini karena hanya menargetkan jenjang S1.

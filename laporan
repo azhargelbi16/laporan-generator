@@ -60,7 +60,7 @@ show_help() {
     echo -e "${YELLOW}Contoh:${NC}"
     echo -e "  ./laporan build"
     echo -e "  ./laporan preset list"
-    echo -e "  ./laporan preset apply itb-ta"
+    echo -e "  ./laporan preset apply unej-faperta"
 }
 
 cmd_check() {
@@ -195,7 +195,7 @@ cmd_preset() {
             local p2="$3"
             if [ -z "$p1" ]; then
                 echo -e "${RED}Error: Sebutkan setidaknya 1 preset untuk dibandingkan.${NC}"
-                echo "Contoh: ./laporan preset diff itb-ta ui-skripsi"
+                echo "Contoh: ./laporan preset diff unej-faperta unej-faperta"
                 exit 1
             fi
             if [ ! -f "presets/${p1}.yml" ]; then
@@ -214,7 +214,7 @@ cmd_preset() {
             else
                 local curr
                 curr=$(grep -E '^[[:space:]]*(preset|margin_preset):' metadata.yml 2>/dev/null | head -n 1 | cut -d: -f2- | tr -d '\"'\''\r\n ')
-                curr=${curr:-"standard"}
+                curr=${curr:-"unej-faperta"}
                 echo -e "${CYAN}${BOLD}Perbandingan: Aktif (${curr})  VS  Target (${p1})${NC}"
                 echo "========================================================"
                 diff -u "presets/${curr}.yml" "presets/${p1}.yml" 2>/dev/null || true
@@ -224,7 +224,7 @@ cmd_preset() {
         show)
             local target="$2"
             if [ -z "$target" ]; then
-                echo -e "${RED}Error: Sebutkan ID preset. Contoh: ./laporan preset show itb-ta${NC}"
+                echo -e "${RED}Error: Sebutkan ID preset. Contoh: ./laporan preset show unej-faperta${NC}"
                 exit 1
             fi
             if [ -f "presets/${target}.yml" ]; then
@@ -241,7 +241,7 @@ cmd_preset() {
         apply)
             local target="$2"
             if [ -z "$target" ]; then
-                echo -e "${RED}Error: Sebutkan ID preset. Contoh: ./laporan preset apply itb-ta${NC}"
+                echo -e "${RED}Error: Sebutkan ID preset. Contoh: ./laporan preset apply unej-faperta${NC}"
                 exit 1
             fi
             if [ ! -f "presets/${target}.yml" ]; then
@@ -286,52 +286,65 @@ cmd_init() {
     echo "Isi data di bawah ini (tekan Enter untuk memakai nilai default):"
     echo ""
 
-    read -rp "Judul Laporan [LAPORAN PROYEK AKADEMIK]: " in_title
-    in_title=${in_title:-"LAPORAN PROYEK AKADEMIK"}
+    read -rp "Judul Laporan [RESPON PERTUMBUHAN TANAMAN JAGUNG]: " in_title
+    in_title=${in_title:-"RESPON PERTUMBUHAN TANAMAN JAGUNG"}
 
-    read -rp "Subjudul [DOKUMENTASI DAN ANALISIS IMPLEMENTASI]: " in_subtitle
-    in_subtitle=${in_subtitle:-"DOKUMENTASI DAN ANALISIS IMPLEMENTASI"}
+    read -rp "Subjudul [kosong]: " in_subtitle
+    in_subtitle=${in_subtitle:-""}
 
-    read -rp "Mata Kuliah [Proyek Perangkat Lunak]: " in_course
-    in_course=${in_course:-"Proyek Perangkat Lunak"}
+    read -rp "Jenis Karya [SKRIPSI]: " in_jenis
+    in_jenis=${in_jenis:-"SKRIPSI"}
 
-    read -rp "Dosen Pengampu [Dr. Nama Dosen, M.Kom.]: " in_lecturer
-    in_lecturer=${in_lecturer:-"Dr. Nama Dosen, M.Kom."}
+    read -rp "Dosen Pembimbing [Ir. Nama Dosen Pembimbing, M.P.]: " in_lecturer
+    in_lecturer=${in_lecturer:-"Ir. Nama Dosen Pembimbing, M.P."}
 
     read -rp "Nama Penulis 1 [Nama Mahasiswa]: " in_author
     in_author=${in_author:-"Nama Mahasiswa"}
 
-    read -rp "NIM Penulis 1 [12345678]: " in_nim
-    in_nim=${in_nim:-"12345678"}
+    read -rp "NIM Penulis 1 [251510501059]: " in_nim
+    in_nim=${in_nim:-"251510501059"}
 
-    read -rp "Institusi/Universitas [UNIVERSITAS TEKNOLOGI]: " in_institution
-    in_institution=${in_institution:-"UNIVERSITAS TEKNOLOGI"}
+    read -rp "Program Studi [Program Studi Agroteknologi]: " in_prodi
+    in_prodi=${in_prodi:-"Program Studi Agroteknologi"}
 
-    read -rp "Fakultas [FAKULTAS ILMU KOMPUTER]: " in_faculty
-    in_faculty=${in_faculty:-"FAKULTAS ILMU KOMPUTER"}
+    read -rp "Institusi/Universitas [Universitas Jember]: " in_institution
+    in_institution=${in_institution:-"Universitas Jember"}
 
-    read -rp "Tahun Akademik [2026/2027]: " in_year
-    in_year=${in_year:-"2026/2027"}
+    read -rp "Fakultas [Fakultas Pertanian]: " in_faculty
+    in_faculty=${in_faculty:-"Fakultas Pertanian"}
+
+    read -rp "Tahun [2026]: " in_year
+    in_year=${in_year:-"2026"}
+
+    read -rp "Mode dokumen [laporan/skripsi, default laporan]: " in_mode
+    in_mode=${in_mode:-"laporan"}
 
     echo ""
-    echo -e "${BLUE}Pilihan Preset Format Kampus:${NC}"
-    echo "  standard / skripsi-4433 / ui-skripsi / itb-ta / ugm-skripsi / its-skripsi"
-    read -rp "Preset Format [standard]: " in_preset
-    in_preset=${in_preset:-"standard"}
+    echo -e "${BLUE}Preset Format Kampus: unej-faperta (FAPERTA UNEJ)${NC}"
+    read -rp "Preset Format [unej-faperta]: " in_preset
+    in_preset=${in_preset:-"unej-faperta"}
 
     cat << YAML_EOF > metadata.yml
+---
 title: "$(yaml_escape "$in_title")"
 subtitle: "$(yaml_escape "$in_subtitle")"
-course: "$(yaml_escape "$in_course")"
-lecturer: "$(yaml_escape "$in_lecturer")"
+jenis_karya: "$(yaml_escape "$in_jenis")"
+mode: "$(yaml_escape "$in_mode")"
 author:
   - name: "$(yaml_escape "$in_author")"
     nim: "$(yaml_escape "$in_nim")"
-institution: "$(yaml_escape "$in_institution")"
+lecturer: "$(yaml_escape "$in_lecturer")"
+lecturer_label: "Dosen Pembimbing:"
+course: ""
+program_studi: "$(yaml_escape "$in_prodi")"
 faculty: "$(yaml_escape "$in_faculty")"
+institution: "$(yaml_escape "$in_institution")"
 year: "$(yaml_escape "$in_year")"
 date: "$(date +'%B %Y')"
 preset: "$(yaml_escape "$in_preset")"
+daftar_gambar: false
+daftar_tabel: false
+daftar_lampiran: false
 YAML_EOF
 
     echo ""
@@ -345,7 +358,7 @@ cmd_build() {
     ./build.sh
     echo ""
     echo -e "${BLUE}${BOLD}2. Membangun Dokumen Microsoft Word (DOCX Multi-Pass)...${NC}"
-    make docx
+    ./build-docx.sh
     echo ""
     echo -e "${GREEN}${BOLD}Dokumen PDF dan DOCX berhasil dibuat!${NC}"
     echo -e "  - ${CYAN}Laporan.pdf${NC}"

@@ -1,32 +1,62 @@
 ---
-title: "Otomatisasi Pembuatan Dokumen Laporan Akademik Menggunakan Pandoc, Typst, dan Markdown"
-subtitle: "Laporan Dokumentasi Pipeline dan Arsitektur Multi-Engine"
+# ============================================================================
+# metadata.yml — Konfigurasi Dokumen Akademik FAPERTA UNEJ
+# Mode "skripsi" : front matter lengkap (pengesahan, ringkasan, summary)
+# Mode "laporan" : cover + daftar isi saja (untuk tugas kuliah/praktikum/responsi)
+# ============================================================================
+
+title: "RESPON PERTUMBUHAN TANAMAN JAGUNG (Zea mays L.) TERHADAP PEMBERIAN PUPUK ORGANIK CAIR"
+subtitle: ""
+jenis_karya: "SKRIPSI"
+mode: "laporan"
+
 author:
-  - name: "Nama Mahasiswa 1"
-    nim: "101234567"
-  - name: "Nama Mahasiswa 2"
-    nim: "101234568"
-  - name: "Nama Mahasiswa 3"
-    nim: "101234569"
-lecturer: "Dr. Nama Dosen Pengampu, M.Kom."
-lecturer_label: "Dosen Pengampu:"
-course: "Proyek Perangkat Lunak"
-institution: "Universitas Example"
-faculty: "Program Studi Informatika"
-year: "2026/2027"
-date: "Agustus 2026"
+  - name: "Nama Mahasiswa"
+    nim: "251510501059"
+
+# Dosen pengampu / pembimbing (label dapat disesuaikan)
+lecturer: "Ir. Nama Dosen Pembimbing, M.P."
+lecturer_label: "Dosen Pembimbing:"
+course: ""
+
+program_studi: "Program Studi Agroteknologi"
+faculty: "Fakultas Pertanian"
+institution: "Universitas Jember"
+year: "2026"
+date: "Juni 2026"
+
+preset: "unej-faperta"
+
+# --- Komponen halaman depan (aktifkan sesuai kebutuhan) ---
 daftar_gambar: false
 daftar_tabel: false
-# Komponen halaman depan opsional (aktifkan jika diperlukan):
+daftar_lampiran: false
+
+# --- Ringkasan (Bahasa Indonesia) & Summary (Bahasa Inggris) ---
+# Aktifkan dengan menghapus tanda komentar. Dikosongkan = komponen dilewati.
 # abstract_id: |
-#   Ringkasan atau abstrak laporan dalam Bahasa Indonesia...
+#   Ringkasan penelitian tidak lebih dari 600 kata dalam Bahasa Indonesia...
 # keywords_id:
-#   - Kata Kunci 1
-#   - Kata Kunci 2
+#   - kata kunci 1
+#   - kata kunci 2
 # abstract_en: |
-#   Summary or abstract of the report in English...
+#   Summary of the research in English...
 # keywords_en:
-#   - Keyword 1
-#   - Keyword 2
-preset: "standard"
+#   - keyword 1
+#   - keyword 2
+
+# --- Lembar Pengesahan (Mode Skripsi) ---
+# approval:
+#   hari_tanggal: "Rabu, 15 April 2026"
+#   supervisors:
+#     - name: "Ir. Nama Dosen Pembimbing, M.P."
+#       nip: "197501012000031001"
+#       role: "Dosen Pembimbing Skripsi"
+#     - name: "Ir. Nama Penguji, M.S."
+#       nip: "196602231987122001"
+#       role: "Dosen Penguji"
+#   dean:
+#     name: "Prof. Dr. Ir. Nama Dekan, M.P."
+#     nip: "196403041989021001"
+#     role: "Dekan"
 ...

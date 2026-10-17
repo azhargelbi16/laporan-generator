@@ -56,8 +56,8 @@ html:
 	PRESET_FILE=""; \
 	if [ -n "$$PRESET" ] && [ -f "presets/$${PRESET}.yml" ]; then \
 		PRESET_FILE="--metadata-file=presets/$${PRESET}.yml"; \
-	elif [ -f "presets/standard.yml" ]; then \
-		PRESET_FILE="--metadata-file=presets/standard.yml"; \
+	elif [ -f "presets/unej-faperta.yml" ]; then \
+		PRESET_FILE="--metadata-file=presets/unej-faperta.yml"; \
 	fi; \
 	pandoc chapters/bab*.md \
 		$$PRESET_FILE \

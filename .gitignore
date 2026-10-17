@@ -1,5 +1,6 @@
 *.pdf
 !examples/*.pdf
+!contoh/*.pdf
 *.docx
 !reference.docx
 *.html
@@ -19,6 +20,7 @@ venv/
 __pycache__/
 *.pyc
 .~lock.*
+~$*
 history-*.md
 *.tmp
 dist/

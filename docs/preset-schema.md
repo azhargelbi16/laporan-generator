@@ -1,16 +1,19 @@
-# Spesifikasi Skema Preset Format Kampus (Preset Schema)
+# Spesifikasi Skema Preset Format (Preset Schema)
 
-File preset format kampus disimpan di dalam direktori `presets/<preset-id>.yml`. File ini mendefinisikan aturan tata letak visual (*page geometry*), tipografi, gaya penomoran heading, serta susunan sampul (*cover page*) untuk dokumen PDF (Typst) dan Word (DOCX).
+Berkas preset disimpan di `presets/<preset-id>.yml` dan mendefinisikan tata
+letak, tipografi, gaya penomoran heading, serta sampul untuk output PDF (Typst)
+dan Word (DOCX).
+
+Proyek ini menyediakan satu preset: **`unej-faperta`** (FAPERTA Universitas Jember).
 
 ---
 
-## Contoh Lengkap Skema Preset
+## Contoh Lengkap (presets/unej-faperta.yml)
 
 ```yaml
-# presets/itb-ta.yml
-preset_id: "itb-ta"
-name: "Institut Teknologi Bandung (ITB)"
-description: "Format Tugas Akhir / Tesis sesuai Pedoman Penulisan Karya Ilmiah ITB."
+preset_id: "unej-faperta"
+name: "Universitas Jember - Fakultas Pertanian"
+description: "Format penulisan karya tulis ilmiah S1 FAPERTA UNEJ."
 
 # 1. Geometri & Margin Halaman
 margin_top: 4cm
@@ -19,61 +22,74 @@ margin_left: 4cm
 margin_right: 3cm
 
 # 2. Tipografi & Spasi
-font_family: "Libertinus Serif"   # Font utama (Times New Roman standard)
-font_size: 12pt                  # Ukuran teks isi
-line_spacing: 0.75em             # Spasi antar baris (1.5 spasi)
-first_line_indent: 1.25cm        # Indentasi awal paragraf
+font_family: "Times New Roman"
+font_fallback: "Libertinus Serif"
+font_size: 12pt
+line_spacing: 1.5
+first_line_indent: 1cm
 
 # 3. Penomoran Heading
-heading_chapter_prefix: "BAB "   # Prefix bab ("BAB ")
-heading_chapter_num_format: "roman" # Angka Romawi ("roman") atau Arab ("arabic")
-heading_sub_dot: true            # true: "1.1." | false: "1.1"
-heading_subsub_dot: false        # true: "1.1.1." | false: "1.1.1"
+heading_chapter_prefix: "BAB "
+heading_chapter_num_format: "arabic"   # "arabic" (BAB 1.) atau "roman" (BAB I)
+heading_chapter_dot: true
+heading_sub_dot: true                  # "1.1." vs "1.1"
+heading_subsub_dot: false              # "1.1.1" vs "1.1.1."
+heading_subsub_bold: false             # subsubbab tidak dicetak tebal
 
-# 4. Pengaturan Halaman Sampul (Cover)
-cover_show_lecturer: false       # true: tampilkan dosen | false: sembunyikan
-cover_hide_lecturer: true        # Flag pembantu untuk parser
-cover_logo_width: 4.5cm          # Lebar logo di sampul depan
+# 4. Nomor Halaman
+page_number_front: "i"
+page_number_front_position: "bottom-center"
+page_number_body_position: "top-right"
+page_number_chapter_first_position: "bottom-center"
+
+# 5. Sampul
+cover_show_lecturer: true
+cover_logo_width: 3cm
+
+# 6. Sitasi
+citation_style: "apa-6th"
 ```
 
 ---
 
-## Daftar Field & Tipe Data
+## Daftar Field
 
-| Kategori | Field | Tipe Data | Nilai Bawaan (Default) | Keterangan |
+| Kategori | Field | Tipe | Default | Keterangan |
 |---|---|---|---|---|
-| **Identitas** | `preset_id` | String | *Nama file tanpa .yml* | ID unik preset (contoh: `ui-skripsi`). |
-| | `name` | String | - | Nama lengkap format / institusi. |
-| | `description` | String | - | Penjelasan singkat karakteristik preset. |
-| **Margin** | `margin_top` | String / Satuan | `2cm` | Jarak batas atas halaman. |
-| | `margin_bottom` | String / Satuan | `3cm` | Jarak batas bawah halaman. |
-| | `margin_left` | String / Satuan | `2.5cm` | Jarak batas kiri halaman (misal: `4cm` untuk jilid). |
-| | `margin_right` | String / Satuan | `2.5cm` | Jarak batas kanan halaman. |
-| **Tipografi** | `font_family` | String | `Libertinus Serif` | Keluarga font dokumen (TNR standard Typst). |
-| | `font_size` | String / pt | `12pt` | Ukuran font teks isi. |
-| | `line_spacing` | String / em | `0.75em` | Jarak leading baris (0.75em = setara 1.5 line). |
-| | `first_line_indent` | String / cm | `1.25cm` | Lebar indentasi baris pertama paragraf. |
-| **Heading** | `heading_chapter_prefix` | String | `BAB ` | Awalan judul bab level 1. |
-| | `heading_sub_dot` | Boolean | `true` | Apakah nomor sub-bab diakhiri titik (`1.1.` vs `1.1`). |
-| | `heading_subsub_dot` | Boolean | `false` | Apakah nomor sub-sub-bab diakhiri titik (`1.1.1`). |
-| **Cover** | `cover_show_lecturer` | Boolean | `true` | Tampilkan blok Dosen Pengampu di cover depan. |
-| | `cover_logo_width` | String / cm | `4cm` | Lebar visual gambar logo di halaman cover. |
+| Identitas | `preset_id` | String | nama berkas | ID unik preset |
+| | `name` | String | - | Nama institusi |
+| | `description` | String | - | Penjelasan singkat |
+| Margin | `margin_top` | Satuan | `4cm` | Pias atas |
+| | `margin_bottom` | Satuan | `3cm` | Pias bawah |
+| | `margin_left` | Satuan | `4cm` | Pias kiri |
+| | `margin_right` | Satuan | `3cm` | Pias kanan |
+| Tipografi | `font_family` | String | `Times New Roman` | Font utama |
+| | `font_fallback` | String | `Libertinus Serif` | Font cadangan |
+| | `font_size` | pt | `12pt` | Ukuran teks isi |
+| | `line_spacing` | Angka | `1.5` | Spasi baris |
+| | `first_line_indent` | cm | `1cm` | Indentasi paragraf |
+| Heading | `heading_chapter_prefix` | String | `BAB ` | Awalan bab |
+| | `heading_chapter_num_format` | `arabic`/`roman` | `arabic` | Format nomor bab |
+| | `heading_chapter_dot` | Boolean | `true` | Titik setelah nomor bab |
+| | `heading_sub_dot` | Boolean | `true` | Titik setelah nomor subbab |
+| | `heading_subsub_dot` | Boolean | `false` | Titik setelah nomor subsubbab |
+| | `heading_subsub_bold` | Boolean | `false` | Bold pada subsubbab |
+| Halaman | `page_number_front_position` | String | `bottom-center` | Posisi nomor bagian awal |
+| | `page_number_body_position` | String | `top-right` | Posisi nomor bagian utama |
+| Sampul | `cover_show_lecturer` | Boolean | `true` | Tampilkan dosen di sampul |
+| | `cover_logo_width` | cm | `3cm` | Lebar logo |
+| Sitasi | `citation_style` | String | `apa-6th` | Gaya sitasi |
 
 ---
 
-## Cara Membuat Preset Kampus Baru
+## Cara Menggunakan Preset
 
-1. Buat berkas baru di direktori `presets/`, misalnya `presets/its-skripsi.yml`.
-2. Isi nilai sesuai buku pedoman kampus Anda.
-3. Terapkan preset pada dokumen dengan menambahkan field `preset` di `metadata.yml`:
-   ```yaml
-   preset: "its-skripsi"
-   ```
-   Atau gunakan perintah CLI helper:
-   ```bash
-   ./laporan preset apply its-skripsi
-   ```
-4. Jalankan kompilasi:
-   ```bash
-   ./laporan build
-   ```
+```yaml
+# metadata.yml
+preset: "unej-faperta"
+```
+
+Validasi:
+```bash
+./laporan preset validate unej-faperta
+```

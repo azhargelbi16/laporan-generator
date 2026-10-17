@@ -4,6 +4,34 @@ Semua perubahan penting pada project **Laporan Generator** akan didokumentasikan
 
 Format dokumen ini mengacu pada [Keep a Changelog](https://keepachangelog.com/id/1.0.0/) dan mematuhi [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-unej-faperta] - 2026-10-16
+
+Adaptasi total project untuk **jenjang S1 Fakultas Pertanian Universitas Jember (FAPERTA UNEJ)** sesuai Buku Pedoman Penulisan Karya Tulis Ilmiah (PPKI) FAPERTA UNEJ (SK Dekan No. 5705/UN25.1.3/KP.8/2021). Menghapus seluruh preset kampus lain agar tidak bentrok.
+
+### Added
+- **Preset `unej-faperta`**: margin 4-3-4-3 cm, Times New Roman 12pt, indentasi 1 cm, spasi 1.5, bab `BAB 1.` (Arab + titik), subbab `1.1.`, subsubbab `1.1.1` (non-bold), nomor halaman Romawi (awal) + Arab (utama).
+- **Mode Dokumen (`mode: skripsi | laporan`)**: satu preset melayani skripsi lengkap maupun laporan kuliah/praktikum/responsi.
+- **Field Metadata Baru**: `jenis_karya`, `mode`, `program_studi`, `daftar_lampiran`, `approval.hari_tanggal`, blok `approval.supervisors`.
+- **Dukungan Front Matter FAPERTA**: Lembar Pengesahan, Ringkasan, Summary pada `template.typ` dan `docx.lua`.
+- **Sitasi APA 6th edition**: `apa.csl` diganti ke APA 6th (root + resources).
+
+### Changed
+- **Rewrite `template.typ`**: memperbaiki bug kritis margin (kini membaca `margin_top/bottom/left/right` preset, bukan hardcode string `margin_preset`), format heading FAPERTA, subsubbab non-bold, transisi nomor halaman Romawi→Arab via `cover.md`.
+- **Rewrite `docx.lua`**: heading `BAB 1. JUDUL`, subbab/subbub bab bertitik, dukungan front matter.
+- **Rewrite dokumentasi dan aturan agen**: `SKILL.md`, `prompt.md`, workflow, `README.md`, `GETTING-STARTED.md`, `docs/*` kini hanya merujuk FAPERTA UNEJ.
+- **Kerangka bab baru**: `chapters/` diganti kerangka kosong FAPERTA (Pendahuluan, Tinjauan Pustaka, Metodologi, Hasil dan Pembahasan, Penutup).
+- **`references.bib`**: diganti contoh referensi pertanian yang nyata (APA 6th).
+
+### Removed
+- Tujuh preset lama: `standard`, `skripsi-4433`, `ui-skripsi`, `itb-ta`, `ugm-skripsi`, `its-skripsi`, `unpad-skripsi`.
+- Berkas sisa `~$aporan.docx` (lock Microsoft Word).
+
+### Fixed
+- **`scan-preset.py`**: deteksi PDF lintas platform (`shutil.which`, fallback pymupdf), nilai `line_spacing` berupa angka, deteksi heading FAPERTA.
+- **`validate-preset.py`**: validasi field baru (`heading_chapter_dot`, `heading_subsub_bold`, `line_spacing`, `citation_style`).
+
+---
+
 ## [2.8.0] - 2026-09-29
 
 ### Added
