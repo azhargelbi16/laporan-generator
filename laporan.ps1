@@ -160,14 +160,18 @@ function Resolve-SourcePdfs {
     param([string[]]$Names)
     $found = @(); $missing = @()
     foreach ($n in $Names) {
-        $n = $n.Trim()
-        if (-not $n) { continue }
-        $cand = @(
-            (Join-Path $RepoRoot "sources\$n.pdf"),
-            (Join-Path $RepoRoot "sources\pdf\$n.pdf")
-        )
-        $hit = $cand | Where-Object { Test-Path $_ } | Select-Object -First 1
-        if ($hit) { $found += $hit } else { $missing += $n }
+        # terima "jurnal1,buku2" sebagai satu string (pemanggilan via powershell -File)
+        # maupun array terpisah (pemanggilan interaktif di sesi PowerShell)
+        foreach ($part in ("$n" -split ',')) {
+            $part = $part.Trim()
+            if (-not $part) { continue }
+            $cand = @(
+                (Join-Path $RepoRoot "sources\$part.pdf"),
+                (Join-Path $RepoRoot "sources\pdf\$part.pdf")
+            )
+            $hit = $cand | Where-Object { Test-Path $_ } | Select-Object -First 1
+            if ($hit) { $found += $hit } else { $missing += $part }
+        }
     }
     return @{ Found = @($found); Missing = @($missing) }
 }
