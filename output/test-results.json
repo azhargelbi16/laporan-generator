@@ -1,0 +1,153 @@
+﻿{
+    "timestamp":  "2026-10-17T13:33:43.2471213+07:00",
+    "repoRoot":  "C:\\Laporan",
+    "environment":  {
+                        "powershell":  "5.1.19041.6456",
+                        "pythonCmd":  "python",
+                        "os":  "Microsoft Windows NT 10.0.19045.0"
+                    },
+    "tools":  {
+                  "pandoc":  {
+                                 "path":  "C:\\Users\\ACER\\AppData\\Local\\Pandoc\\pandoc.exe",
+                                 "version":  "pandoc 3.12.1",
+                                 "installed":  true
+                             },
+                  "python":  {
+                                 "cmd":  "python",
+                                 "version":  "Python 3.12.10",
+                                 "installed":  true
+                             },
+                  "python-docx":  {
+                                      "installed":  true,
+                                      "version":  "1.2.0"
+                                  },
+                  "pypdf":  {
+                                "installed":  true,
+                                "version":  "6.21.0"
+                            },
+                  "ollama":  {
+                                 "models":  [
+                                                "llama3:latest"
+                                            ],
+                                 "running":  true,
+                                 "version":  "ollama version is 0.40.4",
+                                 "installed":  true
+                             }
+              },
+    "capabilities":  {
+                         "templateDocxGeneration":  true,
+                         "docxExtraction":  true,
+                         "pdfExtraction":  true,
+                         "localAI":  true,
+                         "interactiveTUI":  false,
+                         "endToEndTested":  true
+                     },
+    "tests":  [
+                  {
+                      "id":  "T01",
+                      "name":  "Pandoc installed (v\u003e=2.11)",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  false
+                  },
+                  {
+                      "id":  "T02",
+                      "name":  "Python 3 installed",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  false
+                  },
+                  {
+                      "id":  "T03",
+                      "name":  "python-docx module",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  false
+                  },
+                  {
+                      "id":  "T04",
+                      "name":  "pypdf module",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  false
+                  },
+                  {
+                      "id":  "T05",
+                      "name":  "PwshSpectreConsole module",
+                      "status":  "SKIP",
+                      "detail":  "Install: Install-Module PwshSpectreConsole -Scope CurrentUser -Force",
+                      "optional":  true
+                  },
+                  {
+                      "id":  "T06",
+                      "name":  "Ollama CLI installed",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  true
+                  },
+                  {
+                      "id":  "T07",
+                      "name":  "Ollama server running (localhost:11434)",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  true
+                  },
+                  {
+                      "id":  "T08",
+                      "name":  "Ollama has model 7B or larger",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  true
+                  },
+                  {
+                      "id":  "T09",
+                      "name":  "Pandoc generates default reference.docx",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  false
+                  },
+                  {
+                      "id":  "T10",
+                      "name":  "Pandoc: md -\u003e docx with reference-doc",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  false
+                  },
+                  {
+                      "id":  "T11",
+                      "name":  "Reference-doc styles applied (verified via python-docx)",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  false
+                  },
+                  {
+                      "id":  "T12",
+                      "name":  "Extract text from .docx (content check)",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  false
+                  },
+                  {
+                      "id":  "T14",
+                      "name":  "Ollama: markdown quality (heading + citation)",
+                      "status":  "SKIP",
+                      "detail":  "AI quality: missing citation",
+                      "optional":  true
+                  },
+                  {
+                      "id":  "T15",
+                      "name":  "E2E: raw -\u003e AI -\u003e markdown -\u003e pandoc -\u003e docx",
+                      "status":  "PASS",
+                      "detail":  "ok",
+                      "optional":  true
+                  }
+              ],
+    "summary":  {
+                    "fail":  0,
+                    "pass":  12,
+                    "total":  14,
+                    "skip":  2,
+                    "readyToBuild":  true,
+                    "duration":  97.5
+                }
+}

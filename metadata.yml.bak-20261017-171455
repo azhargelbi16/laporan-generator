@@ -1,0 +1,64 @@
+---
+# ============================================================================
+# metadata.yml — Konfigurasi Dokumen Akademik FAPERTA UNEJ
+# Mode "skripsi" : front matter lengkap (pengesahan, ringkasan, summary)
+# Mode "laporan" : cover + daftar isi saja (untuk tugas kuliah/praktikum/responsi)
+# ============================================================================
+
+title: "RESPON PERTUMBUHAN TANAMAN JAGUNG (Zea mays L.) TERHADAP PEMBERIAN PUPUK ORGANIK CAIR"
+subtitle: ""
+jenis_karya: "SKRIPSI"
+mode: "laporan"
+# Bahasa dokumen & locale sitasi: id-ID -> "dkk." dan "dan" (APA 7th)
+lang: "id-ID"
+
+author:
+  - name: "Nama Mahasiswa"
+    nim: "251510501059"
+
+# Dosen pengampu / pembimbing (label dapat disesuaikan)
+lecturer: "Ir. Nama Dosen Pembimbing, M.P."
+lecturer_label: "Dosen Pembimbing:"
+course: ""
+
+program_studi: "Program Studi Agroteknologi"
+faculty: "Fakultas Pertanian"
+institution: "Universitas Jember"
+year: "2026"
+date: "Juni 2026"
+
+preset: "unej-faperta"
+
+# --- Komponen halaman depan (aktifkan sesuai kebutuhan) ---
+daftar_gambar: false
+daftar_tabel: false
+daftar_lampiran: false
+
+# --- Ringkasan (Bahasa Indonesia) & Summary (Bahasa Inggris) ---
+# Aktifkan dengan menghapus tanda komentar. Dikosongkan = komponen dilewati.
+# abstract_id: |
+#   Ringkasan penelitian tidak lebih dari 600 kata dalam Bahasa Indonesia...
+# keywords_id:
+#   - kata kunci 1
+#   - kata kunci 2
+# abstract_en: |
+#   Summary of the research in English...
+# keywords_en:
+#   - keyword 1
+#   - keyword 2
+
+# --- Lembar Pengesahan (Mode Skripsi) ---
+# approval:
+#   hari_tanggal: "Rabu, 15 April 2026"
+#   supervisors:
+#     - name: "Ir. Nama Dosen Pembimbing, M.P."
+#       nip: "197501012000031001"
+#       role: "Dosen Pembimbing Skripsi"
+#     - name: "Ir. Nama Penguji, M.S."
+#       nip: "196602231987122001"
+#       role: "Dosen Penguji"
+#   dean:
+#     name: "Prof. Dr. Ir. Nama Dekan, M.P."
+#     nip: "196403041989021001"
+#     role: "Dekan"
+...
