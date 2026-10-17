@@ -11,24 +11,33 @@ dijalankan dari **Windows PowerShell**. Dua database menjadi input:
 Alur: pilih template & sumber -> ekstraksi teks PDF (pdftotext) -> potong
 teks per-bagian (chunking) -> dirangkum AI menjadi `chapters/bab*.md`
 sesuai struktur template -> validasi sitasi terhadap `references.bib` ->
-Pandoc (`--reference-doc` + `docx.lua` + citeproc APA) -> **Laporan.docx**.
+Pandoc (`--reference-doc` + `docx.lua` + citeproc APA) ->
+**`output/<nama>.docx`**.
 
 Jalur PDF/Typst, CLI npm, Docker, dan docs lama ada di `_legacy/`.
 Format FAPERTA UNEJ (margin, Times New Roman, heading bab bernomor,
-sitasi APA 6th) tetap berlaku lewat `reference.docx`, `docx.lua`,
-`presets/unej-faperta.yml`, dan `apa.csl`.
+logo kampus 5 cm x 5 cm, sitasi **APA 7th**) tetap berlaku lewat
+`reference.docx`, `docx.lua`, `presets/unej-faperta.yml`, dan `apa.csl`.
 
 ## Pemakaian
 
 ```powershell
 .\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2   # penuh dengan AI
+.\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2 -OutFile "laporan-praktikum-jagung"
 .\laporan.ps1 build -Template tugas-dosen -Sources contoh-jurnal # penuh dengan AI
 .\laporan.ps1 build -Template praktikum -NoAi                    # kerangka [perlu diisi] tanpa AI
 .\laporan.ps1 build -Template praktikum -Sources contoh-jurnal -Bab 1  # tulis ulang bab 1 saja
+.\laporan.ps1 docx -Template praktikum -OutFile "laporan-final"  # kompilasi ulang dari chapters/
 .\laporan.ps1 check    # cek dependensi, template, sumber, validasi sitasi
 .\laporan.ps1 list     # daftar template & sumber
-.\laporan.ps1 clean    # hapus Laporan.docx, chapters/bab*.md, cache
+.\laporan.ps1 clean    # hapus chapters/bab*.md, cache, tmp (output/ tetap)
 ```
+
+Semua hasil build disimpan di **`output/`** supaya tidak bercampur dengan
+berkas pipeline. Nama berkas bisa dipilih sendiri lewat `-OutFile`
+(alias `-Nama`); tanpa `-OutFile` hasilnya `output/Laporan.docx`.
+Ekstensi `.docx` ditambahkan otomatis, dan path seperti
+`-OutFile "arsip/laporan-jagung"` juga diterima.
 
 Nama sumber = nama berkas PDF tanpa ekstensi di `sources/pdf/`
 (contoh `-Sources contoh-jurnal` -> `sources/pdf/contoh-jurnal.pdf`).
@@ -63,7 +72,8 @@ ai-config.json         konfigurasi tahap AI
 templates/<nama>/      reference.docx + struktur.md + metadata.yml
 sources/pdf/           PDF sumber; sources/references.bib; sources/extracted/ (cache)
 chapters/              bab hasil AI (bab1-*.md dst., ditulis ulang saat build)
-docx.lua, apa.csl      filter & gaya sitasi pandoc
+output/                DOCX hasil build (nama dipilih via -OutFile; default Laporan.docx)
+docx.lua, apa.csl      filter & gaya sitasi pandoc (APA 7th)
 cover.md, logo.jpg, metadata.yml, presets/   data halaman depan (metadata.yml root
                        menimpa metadata template)
 scripts/               finalize-docx.py, docx-pagenum.py (pasca-proses penomoran)

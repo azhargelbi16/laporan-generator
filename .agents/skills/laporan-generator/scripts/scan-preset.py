@@ -216,7 +216,8 @@ def detect_cover(text):
     """Deteksi opsi sampul depan (apakah dosen pembimbing dicantumkan)."""
     cover = {
         "show_lecturer": True,
-        "logo_width": "4cm",
+        "logo_width": "5cm",
+        "logo_height": "5cm",
     }
     # Jika ada klausul eksplisit bahwa sampul luar tidak mencantumkan pembimbing (seperti ITB)
     if re.search(r"sampul\s*(?:luar|depan)?\s*tanpa\s*(?:nama)?\s*(?:dosen|pembimbing)", text, re.I):
@@ -266,9 +267,10 @@ page_number_chapter_first_position: "bottom-center"
 # 5. Pengaturan Halaman Sampul
 cover_show_lecturer: {str(cover['show_lecturer']).lower()}{hide_lecturer_yaml}
 cover_logo_width: {cover['logo_width']}
+cover_logo_height: {cover['logo_height']}
 
 # 6. Sitasi
-citation_style: "apa-6th"
+citation_style: "apa-7th"
 """
 
 
@@ -303,7 +305,7 @@ def main():
     print(f"  * Margin Halaman  : Atas {margins['top']}, Bawah {margins['bottom']}, Kiri {margins['left']}, Kanan {margins['right']}")
     print(f"  * Tipografi       : {typo['font_family']} {typo['font_size']} (Spasi: {typo['line_spacing']}, Indent: {typo['first_line_indent']})")
     print(f"  * Penomoran Bab   : {headings['chapter_prefix']}{'I' if headings['chapter_num_format'] == 'roman' else '1'}{'.' if headings.get('chapter_dot', True) else ''} (Sub-bab dot: {headings['sub_dot']})")
-    print(f"  * Sampul Depan    : Dosen={'Ya' if cover['show_lecturer'] else 'Tidak'}, Lebar Logo={cover['logo_width']}")
+    print(f"  * Sampul Depan    : Dosen={'Ya' if cover['show_lecturer'] else 'Tidak'}, Logo={cover['logo_width']} x {cover['logo_height']}")
     print("=" * 56 + "\n")
 
     if not args.non_interactive:

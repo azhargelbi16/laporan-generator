@@ -403,13 +403,18 @@ function Pandoc(doc)
         "CoverLecturer"
       )
     end
+    -- Logo kampus: default 5 cm x 5 cm (wajib persegi pada sampul FAPERTA UNEJ)
     local logo_width = meta_str(meta, "cover_logo_width")
     if logo_width == "" then
-      logo_width = "4cm"
+      logo_width = "5cm"
+    end
+    local logo_height = meta_str(meta, "cover_logo_height")
+    if logo_height == "" then
+      logo_height = logo_width
     end
     blocks[#blocks + 1] = spacer(640)
     blocks[#blocks + 1] = pandoc.Div(
-      { pandoc.Para({ pandoc.Image({}, "logo.jpg", "", pandoc.Attr("", {}, { width = logo_width })) }) },
+      { pandoc.Para({ pandoc.Image({}, "logo.jpg", "", pandoc.Attr("", {}, { width = logo_width, height = logo_height })) }) },
       pandoc.Attr("", {}, { ["custom-style"] = "CoverImage" })
     )
     blocks[#blocks + 1] = spacer(640)

@@ -17,8 +17,10 @@ description: >-
 > `templates/<nama>` (reference.docx + struktur.md) + `sources/`
 > (PDF sumber + references.bib) -> ekstraksi pdftotext -> perangkuman AI
 > (terkonfigurasi di `ai-config.json`, default `hermes chat --query-file
-> {prompt_file} -Q`) -> `chapters/bab*.md` -> Pandoc -> `Laporan.docx`.
-> Contoh: `.\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2`
+> {prompt_file} -Q`) -> `chapters/bab*.md` -> Pandoc -> `output/<nama>.docx`
+> (nama berkas dipilih dengan `-OutFile "nama pilihan"`; default
+> `output/Laporan.docx`).
+> Contoh: `.\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2 -OutFile "laporan-praktikum-jagung"`
 > (lihat README.md root). Jalur PDF/Typst, `npx laporan-generator`, MCP
 > server, dan sebagian besar panduan di bawah ini adalah alur v2.8.0 yang
 > kini ada di `_legacy/` dan tidak dipelihara lagi; folder `resources/`
@@ -38,7 +40,7 @@ Jember** mengikuti Buku Pedoman Penulisan Karya Tulis Ilmiah (PPKI) FAPERTA UNEJ
 > 1. `metadata.yml`: metadata akademik (judul, penulis, pembimbing, institusi, mode, preset).
 > 2. `cover.md`: Prakata + blok transisi Daftar Isi & penomoran halaman.
 > 3. `chapters/`: berkas bab modular dalam Markdown standar (`bab1-pendahuluan.md`, dst.).
-> 4. `references.bib`: basis data sitasi BibTeX (gaya APA 6th).
+> 4. `references.bib`: basis data sitasi BibTeX (gaya APA 7th).
 > 5. `template.typ` & `docx.lua`: mesin kompilasi ganda bawaan.
 
 --------------------------------------------------------------------------------
@@ -57,7 +59,8 @@ Jember** mengikuti Buku Pedoman Penulisan Karya Tulis Ilmiah (PPKI) FAPERTA UNEJ
 | Subsubbab | Kiri, **tidak tebal**, Title Case, tanpa titik akhir: **`1.1.1 Judul Subsubbab`** |
 | Nomor halaman | Romawi kecil (i, ii, iii) tengah-bawah untuk bagian awal; Arab (1, 2, 3) kanan-atas untuk bagian utama; halaman pertama tiap bab di tengah-bawah |
 | Ilustrasi | `Tabel 1.1.` (caption di atas) dan `Gambar 1.1.` (caption di bawah) — 11 pt, Sentence case |
-| Sitasi | **APA 6th edition**: `(Nama, 2020)`, `Nama dan Nama (2020)`, `Nama dkk. (2020)` |
+| Logo kampus | **5 cm x 5 cm** (persegi, di tengah halaman sampul) |
+| Sitasi | **APA 7th edition**: `(Nama, 2020)`, `(Nama & Nama, 2020)`, `Nama dan Nama (2020)`, `Nama dkk. (2020)` |
 
 --------------------------------------------------------------------------------
 
@@ -97,14 +100,15 @@ Tanyakan jenis dokumen:
 - **JANGAN menulis nomor di heading**: `# Pendahuluan` (bukan `# BAB 1. Pendahuluan`), `## Latar Belakang` (bukan `## 1.1 Latar Belakang`). Mesin menghitung nomor otomatis.
 - Gunakan Title Case untuk subbab/subsubbab tanpa titik akhir.
 
-### Tahap 4: Higiene Sitasi (APA 6th)
+### Tahap 4: Higiene Sitasi (APA 7th)
 - TIDAK boleh mengarang referensi.
 - Cari referensi nyata via `laporan_citations` (Crossref).
 - Sitasi di naskah: `[@citekey]`, `@citekey`, atau `[@citekey1; @citekey2]`.
 
 ### Tahap 5: Audit & Kompilasi
-1. Jalankan `laporan_doctor` → pastikan `missing_keys: 0`, `broken_images: 0`.
-2. Jalankan `laporan_build` → hasilkan `Laporan.pdf` (Typst) dan `Laporan.docx` (Word).
+1. Jalankan `.\laporan.ps1 check` → pastikan tidak ada `[ERR]`, template/sumber terbaca, dan sitasi valid.
+2. Jalankan `.\laporan.ps1 build -Template <nama> -Sources <pdf1,pdf2> [-OutFile "nama pilihan"]`
+   → hasilkan `output/<nama>.docx` (default `output/Laporan.docx`; jalur PDF/Typst lama ada di `_legacy/`).
 
 --------------------------------------------------------------------------------
 

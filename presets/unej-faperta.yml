@@ -39,7 +39,9 @@ page_number_chapter_first_position: "bottom-center"
 
 # 5. Pengaturan Sampul
 cover_show_lecturer: true
-cover_logo_width: 3cm
+# Logo kampus UNEJ wajib 5 cm x 5 cm (persegi, di tengah halaman sampul)
+cover_logo_width: 5cm
+cover_logo_height: 5cm
 
 # 6. Sitasi
-citation_style: "apa-6th"
+citation_style: "apa-7th"

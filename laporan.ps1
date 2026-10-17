@@ -4,11 +4,13 @@
 # Alur   : template + sumber PDF -> ekstraksi teks (pdftotext) -> potong teks
 #          -> rangkuman AI (konfigurabel via ai-config.json) -> chapters/bab*.md
 #          -> validasi sitasi vs sources/references.bib -> Pandoc
-#          (--reference-doc + docx.lua) -> Laporan.docx
-# Output : HANYA Laporan.docx (jalur PDF/Typst lama ada di _legacy/)
+#          (--reference-doc + docx.lua) -> output/<nama>.docx
+# Output : output\<nama>.docx (default output\Laporan.docx; atur nama dengan
+#          -OutFile "nama pilihan") - jalur PDF/Typst lama ada di _legacy/
 #
 # Contoh :
 #   .\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2
+#   .\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2 -OutFile "laporan-praktikum-jagung"
 #   .\laporan.ps1 build -Template tugas-dosen -Sources contoh-jurnal -NoAi
 #   .\laporan.ps1 check
 #   .\laporan.ps1 list
@@ -21,7 +23,7 @@ param(
     [Parameter()][string[]]$Sources = @(),
     [Parameter()][switch]$NoAi,
     [Parameter()][string]$Bab = "",
-    [Parameter()][string]$OutFile = "Laporan.docx"
+    [Parameter()][Alias("Nama","Name")][string]$OutFile = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,6 +50,40 @@ function Get-PythonCommand {
     $fallback = Get-Command "python" -ErrorAction SilentlyContinue
     if ($fallback) { return $fallback.Source }
     return ""
+}
+
+function Resolve-OutputPath {
+    # Semua hasil build masuk ke folder output/ supaya mudah dicari.
+    # -OutFile "nama pilihan"      -> output\nama pilihan.docx
+    # -OutFile "arsip\nama"        -> arsip\nama.docx (relatif repo)
+    # -OutFile "D:\folder\nama"    -> path absolut dihormati
+    param([string]$Name)
+    if ([string]::IsNullOrWhiteSpace($Name)) { $Name = "Laporan.docx" }
+    $Name = $Name.Trim().Trim('"').Trim("'")
+    if (-not $Name) { $Name = "Laporan.docx" }
+
+    # pipeline ini DOCX-only: ekstensi lain diganti, tanpa ekstensi ditambah .docx
+    if ($Name -match '\.(pdf|doc|odt|typ)$') {
+        $Name = $Name -replace '\.(pdf|doc|odt|typ)$', '.docx'
+    } elseif ($Name -notmatch '\.docx$') {
+        $Name = "$Name.docx"
+    }
+
+    $hasDir = ($Name -match '[\\/]') -or [System.IO.Path]::IsPathRooted($Name)
+    if ($hasDir) {
+        if ([System.IO.Path]::IsPathRooted($Name)) { $full = $Name }
+        else { $full = Join-Path $RepoRoot $Name }
+    } else {
+        $full = Join-Path (Join-Path $RepoRoot "output") $Name
+    }
+
+    $dir = [System.IO.Path]::GetDirectoryName($full)
+    if (-not $dir) { $dir = Join-Path $RepoRoot "output" }
+    $leaf = [System.IO.Path]::GetFileName($full)
+    $leaf = [regex]::Replace($leaf, '[<>:"/\\|?*]', '-')
+    if (-not $leaf) { $leaf = "Laporan.docx" }
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    return (Join-Path $dir $leaf)
 }
 
 function Get-Pdftotext {
@@ -495,7 +531,12 @@ function Invoke-PandocDocx {
     if (-not (Test-Path $tmpDir)) { New-Item -ItemType Directory -Path $tmpDir | Out-Null }
     $docx1 = Join-Path $tmpDir "Laporan-pass1.docx"
     $docx2 = Join-Path $tmpDir "Laporan-pass2.docx"
-    $final = Join-Path $RepoRoot $OutPath
+    $final = $OutPath
+    if (-not [System.IO.Path]::IsPathRooted($final)) { $final = Join-Path $RepoRoot $final }
+    $finalDir = [System.IO.Path]::GetDirectoryName($final)
+    if ($finalDir -and -not (Test-Path $finalDir)) {
+        New-Item -ItemType Directory -Path $finalDir -Force | Out-Null
+    }
 
     & pandoc @pandocArgs -o $docx1
     if ($LASTEXITCODE -ne 0) {
@@ -508,38 +549,48 @@ function Invoke-PandocDocx {
     $finalize = Join-Path $RepoRoot "scripts\finalize-docx.py"
     $pagenum = Join-Path $RepoRoot "scripts\docx-pagenum.py"
     if ($py -and (Test-Path $finalize)) {
-        & $py $finalize $docx1 $docx2
-        if ($LASTEXITCODE -eq 0 -and (Test-Path $docx2)) {
-            Write-Ok "finalize-docx : penomoran bagian diterapkan"
-        } else {
-            Write-Wrn "finalize-docx gagal; memakai hasil pandoc langsung"
-            Copy-Item $docx1 $docx2 -Force
-        }
-        if (Test-Path $pagenum) {
-            & $py $pagenum $docx2 $final
-            if ($LASTEXITCODE -ne 0) {
-                Write-Wrn "docx-pagenum gagal; memakai hasil finalize"
+        try {
+            & $py $finalize $docx1 $docx2
+            if ($LASTEXITCODE -eq 0 -and (Test-Path $docx2)) {
+                Write-Ok "finalize-docx : penomoran bagian diterapkan"
+            } else {
+                Write-Wrn "finalize-docx gagal; memakai hasil pandoc langsung"
+                Copy-Item $docx1 $docx2 -Force
+            }
+            if (Test-Path $pagenum) {
+                & $py $pagenum $docx2 $final
+                if ($LASTEXITCODE -ne 0 -or -not (Test-Path $final)) {
+                    Write-Wrn "docx-pagenum gagal; memakai hasil finalize"
+                    Copy-Item $docx2 $final -Force
+                }
+            } else {
                 Copy-Item $docx2 $final -Force
             }
-        } else {
-            Copy-Item $docx2 $final -Force
+        } catch {
+            Write-Err "gagal menulis '$final'. Kemungkinan file sedang dibuka di Word - tutup lalu ulangi build."
+            Write-Host "         detail: $($_.Exception.Message)"
+            return $false
         }
     } else {
         Write-Wrn "python / finalize-docx.py tidak tersedia; DOCX tanpa pasca-proses penomoran"
-        Copy-Item $docx1 $final -Force
+        try { Copy-Item $docx1 $final -Force }
+        catch {
+            Write-Err "gagal menulis '$final'. Kemungkinan file sedang dibuka di Word - tutup lalu ulangi build."
+            return $false
+        }
     }
     if (Test-Path $final) {
         Write-Ok "output       : $final ($([Math]::Round((Get-Item $final).Length/1KB,1)) KB)"
         return $true
     }
-    Write-Err "Laporan.docx gagal dibuat"
+    Write-Err "DOCX gagal dibuat"
     return $false
 }
 
 # ------------------------------------------------------------------ build ---
 
 function Cmd-Build {
-    param([string]$TemplateId, [string[]]$SourceNames, [switch]$SkipAi, [string]$BabFilter)
+    param([string]$TemplateId, [string[]]$SourceNames, [switch]$SkipAi, [string]$BabFilter, [string]$OutPath)
 
     if (-not $TemplateId) { $TemplateId = "praktikum" }
     Write-Step "Tahap 1: template '$TemplateId'"
@@ -667,8 +718,9 @@ function Cmd-Build {
         }
     }
 
+    $finalPath = Resolve-OutputPath -Name $OutPath
     Write-Step "Tahap 6: kompilasi DOCX (pandoc + reference-doc + docx.lua)"
-    $ok = Invoke-PandocDocx -TplDir $tplDir -OutPath "Laporan.docx"
+    $ok = Invoke-PandocDocx -TplDir $tplDir -OutPath $finalPath
     if (-not $ok) { exit 1 }
 
     $allMd = (Get-ChildItem $chaptersDir -Filter "bab*.md" | Sort-Object Name | ForEach-Object {
@@ -677,7 +729,7 @@ function Cmd-Build {
     $nPlaceholder = ([regex]::Matches($allMd, '\[perlu diisi')).Count
     Write-Host ""
     Write-Host "=== BUILD SELESAI ===" -ForegroundColor Green
-    Write-Host "  Output  : $(Join-Path $RepoRoot 'Laporan.docx')"
+    Write-Host "  Output  : $finalPath"
     Write-Host "  Catatan : $nPlaceholder penanda [perlu diisi] di naskah - lengkapi/cek manual."
 }
 
@@ -801,7 +853,8 @@ function Cmd-Clean {
     Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $RepoRoot "chapters\*.md")
     Remove-Item -Force -ErrorAction SilentlyContinue (Join-Path $RepoRoot "sources\extracted\*.txt")
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue (Join-Path $RepoRoot "tmp")
-    Write-Ok "dibersihkan: Laporan.docx, chapters/bab*.md, cache ekstraksi, tmp/"
+    Write-Ok "dibersihkan: chapters/bab*.md, cache ekstraksi, tmp/"
+    Write-Host "  folder output/ TIDAK dihapus (berisi DOCX hasil build Anda)" -ForegroundColor Yellow
 }
 
 # ------------------------------------------------------------------- help ---
@@ -812,34 +865,37 @@ function Show-Help {
     Write-Host "  ==================================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  Pemakaian:"
-    Write-Host "    .\laporan.ps1 build -Template <nama> -Sources <pdf1,pdf2> [-NoAi] [-Bab <n>]"
-    Write-Host "    .\laporan.ps1 docx      kompilasi ulang Laporan.docx dari chapters/ yang ada"
+    Write-Host "    .\laporan.ps1 build -Template <nama> -Sources <pdf1,pdf2> [-NoAi] [-Bab <n>] [-OutFile <nama>]"
+    Write-Host "    .\laporan.ps1 docx      kompilasi ulang DOCX dari chapters/ yang ada"
     Write-Host "    .\laporan.ps1 check     cek dependensi & struktur"
     Write-Host "    .\laporan.ps1 list      daftar template & sumber"
-    Write-Host "    .\laporan.ps1 clean     hapus output"
+    Write-Host "    .\laporan.ps1 clean     hapus berkas kerja (output/ tetap)"
     Write-Host ""
     Write-Host "  Contoh:"
     Write-Host "    .\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2"
+    Write-Host "    .\laporan.ps1 build -Template praktikum -Sources jurnal1,buku2 -OutFile `"laporan-praktikum-jagung`""
     Write-Host "    .\laporan.ps1 build -Template tugas-dosen -Sources contoh-jurnal"
     Write-Host "    .\laporan.ps1 build -Template praktikum -NoAi     (kerangka [perlu diisi] saja)"
     Write-Host "    .\laporan.ps1 build -Template praktikum -Sources contoh-jurnal -Bab 1"
     Write-Host ""
     Write-Host "  Konfigurasi AI  : ai-config.json (default: hermes chat -q, non-interaktif)"
     Write-Host "  Template        : templates\<nama>\{reference.docx, struktur.md, metadata.yml}"
-    Write-Host "  Sumber & sitasi : sources\pdf\*.pdf + sources\references.bib"
-    Write-Host "  Output          : Laporan.docx (satu-satunya output; jalur PDF lama di _legacy\)"
+    Write-Host "  Sumber & sitasi : sources\pdf\*.pdf + sources\references.bib (APA 7th)"
+    Write-Host "  Output          : output\<nama>.docx (default output\Laporan.docx)"
+    Write-Host "                    pilih nama sendiri dengan -OutFile `"nama laporan`""
 }
 
 # -------------------------------------------------------------- dispatcher --
 
 switch ($Command.ToLower()) {
-    "build" { Cmd-Build -TemplateId $Template -SourceNames $Sources -SkipAi:$NoAi -BabFilter $Bab }
+    "build" { Cmd-Build -TemplateId $Template -SourceNames $Sources -SkipAi:$NoAi -BabFilter $Bab -OutPath $OutFile }
     "docx"  {
         if (-not $Template) { $Template = "praktikum" }
         $tplDir = Join-Path $RepoRoot "templates\$Template"
         if (-not (Test-Path $tplDir)) { Write-Err "template tidak ditemukan: templates\$Template"; exit 1 }
-        Write-Step "Kompilasi ulang Laporan.docx dari chapters/ yang ada (template '$Template')"
-        $ok = Invoke-PandocDocx -TplDir $tplDir -OutPath "Laporan.docx"
+        $finalPath = Resolve-OutputPath -Name $OutFile
+        Write-Step "Kompilasi ulang DOCX dari chapters/ yang ada (template '$Template') -> $finalPath"
+        $ok = Invoke-PandocDocx -TplDir $tplDir -OutPath $finalPath
         if (-not $ok) { exit 1 }
     }
     "check" { Cmd-Check }

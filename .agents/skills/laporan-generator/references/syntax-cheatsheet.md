@@ -5,9 +5,9 @@ Microsoft Word DOCX), mengikuti PPKI FAPERTA Universitas Jember.
 
 ---
 
-## 1. Sitasi & Bibliografi (APA 6th)
+## 1. Sitasi & Bibliografi (APA 7th)
 
-Daftar pustaka dikelola via `references.bib`; format memakai **APA 6th edition** (`apa.csl`).
+Daftar pustaka dikelola via `references.bib`; format memakai **APA 7th edition** (`apa.csl`).
 
 | Sintaks Markdown | Hasil | Keterangan |
 |---|---|---|

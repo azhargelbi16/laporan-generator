@@ -44,10 +44,11 @@ page_number_chapter_first_position: "bottom-center"
 
 # 5. Sampul
 cover_show_lecturer: true
-cover_logo_width: 3cm
+cover_logo_width: 5cm
+cover_logo_height: 5cm
 
 # 6. Sitasi
-citation_style: "apa-6th"
+citation_style: "apa-7th"
 ```
 
 ---
@@ -77,8 +78,9 @@ citation_style: "apa-6th"
 | Halaman | `page_number_front_position` | String | `bottom-center` | Posisi nomor bagian awal |
 | | `page_number_body_position` | String | `top-right` | Posisi nomor bagian utama |
 | Sampul | `cover_show_lecturer` | Boolean | `true` | Tampilkan dosen di sampul |
-| | `cover_logo_width` | cm | `3cm` | Lebar logo |
-| Sitasi | `citation_style` | String | `apa-6th` | Gaya sitasi |
+| | `cover_logo_width` | cm | `5cm` | Lebar logo (wajib 5cm) |
+| | `cover_logo_height` | cm | `5cm` | Tinggi logo (wajib 5cm) |
+| Sitasi | `citation_style` | String | `apa-7th` | Gaya sitasi |
 
 ---
 

@@ -4,4 +4,5 @@
 # karena metadata.yml root dibaca SETELAH file ini oleh pandoc.
 jenis_karya: "MAKALAH"
 mode: "laporan"
+lang: "id-ID"
 title: "MAKALAH TUGAS KULIAH [perlu diisi]"

@@ -13,6 +13,7 @@
 *.fls
 *.fdb_latexmk
 /tmp/
+/output/
 sources/extracted/
 .DS_Store
 Thumbs.db

@@ -36,7 +36,8 @@ Atau via CLI:
 | Subbab | `1.1. Judul Subbab` (tebal) |
 | Subsubbab | `1.1.1 Judul Subsubbab` (tidak tebal) |
 | Nomor halaman | Romawi kecil tengah-bawah (awal); Arab kanan-atas (utama) |
-| Sitasi | APA 6th edition |
+| Logo kampus | 5 cm x 5 cm (persegi, tengah sampul) |
+| Sitasi | APA 7th edition |
 
 ---
 

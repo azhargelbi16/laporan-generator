@@ -9,6 +9,8 @@ title: "RESPON PERTUMBUHAN TANAMAN JAGUNG (Zea mays L.) TERHADAP PEMBERIAN PUPUK
 subtitle: ""
 jenis_karya: "SKRIPSI"
 mode: "laporan"
+# Bahasa dokumen & locale sitasi: id-ID -> "dkk." dan "dan" (APA 7th)
+lang: "id-ID"
 
 author:
   - name: "Nama Mahasiswa"
